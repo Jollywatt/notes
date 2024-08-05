@@ -1,0 +1,10 @@
+{
+  "using GeometricAlgebra\n@basis (e1=1, e2=1, ep=1, em=-1) grades=1\neoo = ep + em\ne0 = ep - em\n@assert eoo^2 == 0\n@assert eoo⋅e0 == 2\nup(x) = (x^2*eoo - e0) + 2x\nx = 3*e1 + 5*e2\ny = e1 + 10*e2\n@assert up(x)^2 == up(y)^2 == 0\n@assert up(x)⋅up(y) == -2(x - y)^2\n\n:(e_oo + e_0)": {
+    "head": "call",
+    "args": [
+      "+",
+      "e_oo",
+      "e_0"
+    ]
+  }
+}

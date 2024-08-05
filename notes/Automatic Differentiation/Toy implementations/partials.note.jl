@@ -1,0 +1,12 @@
+∂(::typeof(+), a, b) = (one(a), one(b))
+∂(::typeof(-), a) = -one(a)
+∂(::typeof(-), a, b) = (one(a), -one(b))
+∂(::typeof(*), a, b) = (b, a)
+∂(::typeof(inv), a) = -inv(a)^2
+∂(::typeof(/), a, b) = (inv(b), -a*inv(b)^2)
+∂(::typeof(exp), a) = exp(a)
+∂(::typeof(log), a) = inv(a)
+∂(::typeof(sqrt), a) = inv(2sqrt(a))
+∂(::typeof(sin), a) = cos(a)
+∂(::typeof(cos), a) = -sin(a)
+∂(::typeof(^), a, b) = (b*a^(b - 1), log(a)*a^b)

@@ -1,0 +1,134 @@
+\documentclass[a5paper]{article}
+\usepackage{geometry}
+\usepackage{graphicx}
+
+\usepackage{amsmath,amssymb}
+\usepackage{physics}
+\usepackage{bm}
+\usepackage{mathtools}
+
+\usepackage{amsthm}
+\newtheorem{definition}{Definition}
+
+\pagenumbering{gobble}
+
+\usepackage{autonum}
+
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\T}{\mathrm{T}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Cinf}{\mathcal{C}^\infty}
+
+\renewcommand{\eval}[1]{\!\left.{#1}\right|}
+
+\begin{document}
+
+\section*{Pushforward}
+
+If $\psi : \M \to \N$ is a smooth map between manifolds, then the \emph{pushforward} of $\psi$, denoted $\psi_*$ or $\T\psi$ is the induced mapping $\T\M \to \T\N$ between tangent bundles.
+Imagine gluing a vector $V \in \T_p\M$ to the manifold $\M$, and continuously moving $\M$ onto $\N$ according to $\psi$, bringing the vector with it.
+The final position of the vector is $\psi_*V \in \T_{\psi(p)}\N$.
+
+\begin{center}
+	\makebox[\textwidth][c]{
+		\includegraphics[width=\textwidth]{{figure.pushforward}.jpg}
+	}
+\end{center}
+
+\begin{definition}[Pushforward]
+	Let $\psi : \M \to \N$ be a smooth map.
+	Let $V \in \T_p\M$ be a vector.
+	The pushforward $\psi_*V \in \T_{\psi(p)}\N$ of $V$ by $\psi$ is defined by its action on a scalar field $f \in \mathcal C^\infty(\N)$ via
+	\begin{gather}
+		\psi_* : \T_p\M \to \T_{\psi(p)}\N
+	,\\	(\psi_* V)(f)\big|_{\psi(p)} = V(f \circ \psi)\big|_p
+	.\end{gather}
+\end{definition}
+\emph{``The action of $\psi_*V$ on any function is simply the action of $V$ on the pullback of that function.''}
+The map $\psi$ need not be invertible.
+The pushforward $\psi_*$ may be defined on vector fields $V \subset \T\M$ by applying the definition pointwise for all $p \in \M$.
+However, if $V$ is a vector field on $\M$, then $\psi_*V$ is only defined on the image $\psi(\M) \subseteq \N$ and is multi-valued where $\psi$ fails to be injective.
+
+\subsubsection*{Coordinate basis}
+To explicitly find $\psi_*$ at a point $\psi(p) \in \N$, let $x^\mu$ and $y^{\bar\mu} = \psi^{\bar\mu}(x^\alpha)$ be local coordinates in a neighbourhood of $p \in \M$ and $\psi(p) \in \N$, respectively.
+These coordinates induce bases in the tangent spaces,
+\begin{align}
+	\T_p\M &= \operatorname{span}\qty{\pdv{x^\mu}}_{\mu=1}^{\dim\M}
+,&	\T_{\psi(p)}\N &= \operatorname{span}\qty{\pdv{y^{\bar\mu}}}_{\bar\mu=1}^{\dim\N}
+.\end{align}
+Unpacking the terse definition,
+\begin{align}
+	\underbrace{
+		(\underbrace{
+			\psi_*\underbrace{V}_{\T_p\M}
+		}_{\T_{\psi(p)}\N})(\underbrace{f}_{\Cinf(\N)})
+	}_\R \Big|_{\psi(p)}
+	= \underbrace{
+		\underbrace{
+			V(\underbrace{f\circ\psi}_{\Cinf(\N)})
+		}_{\Cinf(\N)}\Big|_p
+	}_\R
+	\label{eqn:def-for-functional}
+,\end{align}
+we proceed to write the left-hand side in coordinates,
+\begin{align}
+	\eval{(\psi_*V)(f)}_{\psi(p)}
+	&= (\psi_*V)^{\bar\mu}
+		\eval{\pdv{f}{y^{\bar\mu}}}_{\psi(p)}
+	= \eval{\qty(\psi_*(V^\alpha\partial_\alpha))^{\bar\mu}}_{\psi(p)}
+	\eval{\pdv{f}{y^{\bar\mu}}}_{\psi(p)}
+.\end{align}
+Equating with the right-hand side, also expressed in coordinates,
+\begin{align}
+	\eval{V(f\circ\psi)}_p
+	&= V^\nu
+		\eval{\pdv{f(\psi^{\bar\alpha}(x^\beta))}{x^\nu}}_p
+	= V^\nu
+		\eval{\pdv{f}{y^{\bar\mu}}}_{\psi(p)}
+		\eval{\pdv{\psi^{\bar\mu}}{x^\nu}}_p
+,\end{align}
+we cancel $\eval{\pdv*{f}{y^{\bar\mu}}}_{\psi(p)}$ from both sides and obtain
+\begin{align}
+	\eval{\qty(\psi_*(V^\alpha\partial_\alpha))^{\bar\mu}}_{\psi(p) }
+	= V^\nu\eval{\pdv{y^{\bar\mu}}{x^\nu}}_p
+.\end{align}
+From this we see that $\psi_*$ is linear, allowing expression as a matrix.
+% \begin{math}
+% 	(\psi_*(V))^{\bar\mu} = (\psi_*)^{\bar\mu}{}_\nu V^\nu
+% .\end{math}
+\begin{align}
+	\eval{(\psi_*)^{\bar\mu}{}_\nu}_{\psi(p)} V^\nu
+	= V^\nu \eval{\pdv{y^{\bar\mu}}{x^\nu}}_p
+\end{align}
+Finally, since $V^\mu$ is arbitrary, we may peel it off, leaving
+\begin{align}
+	\eval{(\psi_*)^{\bar\mu}{}_\nu}_{\psi(p)} = \eval{\pdv{y^{\bar\mu}}{x^\nu}}_p
+	\iff
+	\psi_* = \eval{\pdv{y^{\bar\mu}}{x^\nu}}_p \partial_{\bar\mu} \otimes \dd x^\nu
+.\end{align}
+
+
+\subsubsection*{Relation to Exterior Derivative}
+
+
+In the case that the codomain $\N \cong \R$ is one-dimensional, the pushforward of vectors in $\T\M$ by $\psi$ coincides with the exterior derivative $\dd\psi$ of $\psi$ when viewed as a scalar field in $\Cinf(\M)$.
+
+In coordinates, $(\psi_*)^{\bar\mu}{}_\nu = \pdv*{\psi^{\bar\mu}}{x^\nu}$, but $\bar\mu$ runs over a single coordinate since $\dim\R = 1$, so the index may be implicitly dropped.
+\begin{align}
+	(\psi_*)_\mu = \pdv{\psi}{x^\mu}
+	\iff
+	\psi_* = \pdv{\psi}{x^\mu}\dd x^\mu \equiv \dd\psi
+.\end{align}
+Formally, the pushforward is a linear map $\psi_* : \T\M \to \T\R$, whereas the exterior derivative is a linear map $\dd\psi : \T\M \to \R$.
+If $\xi$ is the single coordinate of $\R$, so that $\T\R = \operatorname{span}\qty{\partial_\xi}$ and $\T^*\R = \operatorname{span}\qty{\dd\xi}$, then the exterior derivative may be defined in terms of the pushforward by
+\begin{align}
+	\dd\psi(V) \coloneqq \psi_*(\dd\xi \otimes V)
+	&= \pdv{\xi}{x^\nu} \braket{\partial_\xi}{\dd\xi} \braket{\dd x^\nu}{V^\mu\partial_\mu}
+\\	&= V^\mu\pdv{\xi}{x^\nu} \delta^\nu_\mu
+	= V^\mu\pdv{\xi}{x^\mu}
+.\end{align}
+%
+%
+\end{document}
