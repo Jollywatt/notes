@@ -2,6 +2,8 @@ module Templates
 
 ROOT = "/notes"
 
+permalink(url) = "https://jollywatt.github.io$ROOT/"*url
+
 base(content; title, head="") = """
 	<!DOCTYPE html>
 	<html>

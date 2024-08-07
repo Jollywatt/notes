@@ -90,14 +90,10 @@ function rendernote(::Val{:html}, name, note)
 	insitedir(note.file)
 end
 
-permalink(name) = "https://jollywatt.github.io/notes/"*name
-
 function exportpermalinks(notes)
-	path = joinpath(ENV["HOME"], "Documents/typst-notes/permalinks.csv")
-	open(path, "w") do file
-		write(file, "name,url\n")
-		for (name, info) in notes
-			write(file, name, ",", permalink(name), "\n")
+	open("typst-template/permalinks.csv", "w") do file
+		for name in sort!(collect(keys(notes)))
+			write(file, name, ",", Templates.permalink(name), "\n")
 		end
 	end
 end
@@ -122,6 +118,8 @@ function build()
 			write(f, Templates.toc(notes))
 		end
 	end
+
+	exportpermalinks(notes)
 
 	nothing
 end

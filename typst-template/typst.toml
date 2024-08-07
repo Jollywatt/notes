@@ -1,0 +1,6 @@
+[package]
+name = "notes"
+version = "0.1.0"
+entrypoint = "notes.typ"
+authors = ["Joseph Wilson (Jollywatt)"]
+description = "Common functions for my personal notes."
