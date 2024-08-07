@@ -13,7 +13,7 @@ end
 trimnotesuffix(filename) = replace(filename, ".note."=>".")
 
 function clean()
-	rm("build", recursive=true, force=true)
+	rm("site", recursive=true, force=true)
 end
 
 
@@ -38,9 +38,9 @@ function multinote(byext::Dict{Symbol,String})
 end
 
 
-function inbuilddir(srcfile)
+function insitedir(srcfile)
 	dest = replace(basename(srcfile), ".note."=>".")
-	run(`ln $srcfile build/$dest`)
+	run(`ln $srcfile site/$dest`)
 	dest
 end
 
@@ -69,9 +69,9 @@ end
 
 
 function rendernote(::Val{:pdf}, name, note)
-	inbuilddir(note.src)
-	pdf = inbuilddir(note.file)
-	open("build/$name.html", "w") do f
+	insitedir(note.src)
+	pdf = insitedir(note.file)
+	open("site/$name.html", "w") do f
 		html = Templates.pdf(
 			title=name,
 			file=pdf,
@@ -81,18 +81,18 @@ function rendernote(::Val{:pdf}, name, note)
 end
 
 function rendernote(::Val{:jl}, name, note)
-	file = inbuilddir(note.file)
-	open("build/$name.html", "w") do f
+	file = insitedir(note.file)
+	open("site/$name.html", "w") do f
 		html = Templates.julia(
 			title=name,
-			code=read(joinpath("build", file), String),
+			code=read(joinpath("site", file), String),
 		)
 		write(f, html)
 	end
 end
 
 function rendernote(::Val{:html}, name, note)
-	inbuilddir(note.file)
+	insitedir(note.file)
 end
 
 permalink(name) = "https://jollywatt.github.io/notes/"*name
@@ -108,19 +108,21 @@ function exportpermalinks(notes)
 end
 
 function build()
-	rm("build", recursive=true, force=true)
-	mkpath("build")
+	@info "Building Zettelkasten"
 
-	cp("assets", "build/assets")
+	rm("site", recursive=true, force=true)
+	mkpath("site")
+
+	cp("assets", "site/assets")
 
 	notes = findnotes()
 
 	for (name, note) in notes
-		@info "Rendering note" name
+		println("Rendering note ", repr(name))
 		rendernote(Val(note.kind), name, note)
 	end
 
-	cd("build") do
+	cd("site") do
 		open("index.html", "w") do f
 			write(f, Templates.toc(notes))
 		end

@@ -1,7 +1,7 @@
 using HTTP
 using FileWatching
 
-function serve(; serverroot="./build", clientroot="/notes", port=8000)
+function serve(; serverroot="./site", clientroot="/notes", port=8000)
 
 	HTTP.listen("127.0.0.1", port) do http::HTTP.Stream
 
