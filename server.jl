@@ -1,3 +1,5 @@
+#!/usr/bin/env julia
+
 using HTTP
 using FileWatching
 
@@ -37,3 +39,6 @@ function serve(; serverroot="./site", clientroot="/notes", port=8000)
 
 end
 
+if !isinteractive()
+	serve()
+end

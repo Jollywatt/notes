@@ -37,11 +37,11 @@ jobs:
         with:
           version: '1.10'
       - name: Build site
-        run: 'julia -L build.jl -e "build()"'
+        run: ./build.jl
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'site'
+          path: site
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

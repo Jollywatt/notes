@@ -1,16 +1,11 @@
+#!/usr/bin/env julia
+
 if !isdefined(Main, :Revise)
 	const includet = include
 end
 
 includet("templates.jl")
 
-
-function mkcd(f, path)
-	mkpath(path)
-	cd(f, path)
-end
-
-trimnotesuffix(filename) = replace(filename, ".note."=>".")
 
 function clean()
 	rm("site", recursive=true, force=true)
@@ -64,7 +59,7 @@ function findnotes()
 		end
 	end
 
-	sort(Dict(name => multinote(files) for (name, files) in sort(filesbyname)))
+	Dict(name => multinote(files) for (name, files) in filesbyname)
 end
 
 
@@ -129,4 +124,9 @@ function build()
 	end
 
 	nothing
+end
+
+
+if !isinteractive()
+	build()
 end

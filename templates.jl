@@ -48,7 +48,7 @@ toc(notes) = base("""
 	<ul>
 	$(join("""
 		<li><a href="$ROOT/$name">$name</a> ($(info.kind))</li>
-	""" for (name, info) in notes))
+	""" for (name, info) in sort(collect(notes), by=first)))
 	</ul>
 	"""; title = "Home")
 
