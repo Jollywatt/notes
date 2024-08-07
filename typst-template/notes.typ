@@ -14,9 +14,9 @@
 
 #let refs = strong[Referenceable notes: #get-permalinks().keys()]
 
-#let note-crossref(name, url) = {
+#let note-crossref(label, url) = {
 	let c = eastern.transparentize(85%)
-	link(url, highlight(fill: c, raw(name)))
+	link(url, highlight(fill: c, label))
 }
 
 #let style(body) = {
@@ -30,7 +30,12 @@
 		let name = str(it.target)
 		let note-refs = get-permalinks()
 		if name in note-refs {
-			note-crossref(name, note-refs.at(name))
+			let label = if it.supplement == auto {
+				raw("["+name+"]")
+			} else {
+				it.supplement
+			}
+			note-crossref(label, note-refs.at(name))
 		} else { it }
 	}
 

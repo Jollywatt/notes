@@ -48,6 +48,7 @@ It works like magic!
 	+ $chi(lambda) = sum_(k=0)^n c_k lambda^k$
 ]
 
+Also refer to a @flv-algorithm[Julia implementation].
 
 
 == Derivation

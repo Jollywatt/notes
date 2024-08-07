@@ -17,9 +17,10 @@
 #let clos(it) = $lr(⟦it⟧)$
 #let GL = "GL"
 
-The Faddeev--LeVerrier inverse algorithm may be used to find the inverse of an $n times n$ matrix $A$ in exactly $n$ steps (with one matrix multiplication per step).
+The @flv-derivation[Faddeev--LeVerrier inverse algorithm] may be used to find the inverse of an $n times n$ matrix $A$ in exactly $n$ steps (with one matrix multiplication per step).
 As input, the algorithm takes the matrix $A$ and the dimension $n$.
 The algorithm succeeds if and only if an inverse exists.
+
 
 This method can be used to invert elements in a geometric algebra $cal(A)$ by considering a linear representation $rho : cal(A) -> GL(n)$.
 
