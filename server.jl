@@ -1,4 +1,5 @@
 using HTTP
+using FileWatching
 
 function serve(; serverroot="./build", clientroot="/notes", port=8000)
 
@@ -35,3 +36,4 @@ function serve(; serverroot="./build", clientroot="/notes", port=8000)
 	end
 
 end
+
