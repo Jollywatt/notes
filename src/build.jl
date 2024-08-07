@@ -6,10 +6,9 @@ end
 
 includet("templates.jl")
 
-
-function clean()
-	rm("site", recursive=true, force=true)
-end
+cd(dirname(@__FILE__))
+SOURCE_DIR = "../notes"
+TARGET_DIR = "../site"
 
 
 function multinote(byext::Dict{Symbol,String})
@@ -32,18 +31,10 @@ function multinote(byext::Dict{Symbol,String})
 
 end
 
-
-function insitedir(srcfile)
-	dest = replace(basename(srcfile), ".note."=>".")
-	run(`ln $srcfile site/$dest`)
-	dest
-end
-
-
-function findnotes()
+function findnotes(srcdir)
 	filesbyname = Dict{String,Dict{Symbol,String}}()
 
-	for (root, dirs, files) in walkdir("notes/")
+	for (root, dirs, files) in walkdir(srcdir)
 		filter!(!startswith("."), files)
 		for file in files
 
@@ -63,10 +54,23 @@ function findnotes()
 end
 
 
+"""
+Make a link of the source file in current directory,
+with `.note.` removed from the filename.
+"""
+function tohere(srcfile::String)
+	dest = replace(basename(srcfile), ".note."=>".")
+	run(`ln $srcfile $dest`)
+	dest
+end
+
+
+
+
 function rendernote(::Val{:pdf}, name, note)
-	insitedir(note.src)
-	pdf = insitedir(note.file)
-	open("site/$name.html", "w") do f
+	tohere(note.src)
+	pdf = tohere(note.file)
+	open("$name.html", "w") do f
 		html = Templates.pdf(
 			title=name,
 			file=pdf,
@@ -76,18 +80,18 @@ function rendernote(::Val{:pdf}, name, note)
 end
 
 function rendernote(::Val{:jl}, name, note)
-	file = insitedir(note.file)
-	open("site/$name.html", "w") do f
+	file = tohere(note.file)
+	open("$name.html", "w") do f
 		html = Templates.julia(
 			title=name,
-			code=read(joinpath("site", file), String),
+			code=read(note.file, String),
 		)
 		write(f, html)
 	end
 end
 
 function rendernote(::Val{:html}, name, note)
-	insitedir(note.file)
+	tohere(note.file)
 end
 
 function exportpermalinks(notes)
@@ -98,24 +102,28 @@ function exportpermalinks(notes)
 	end
 end
 
-function build()
+
+
+function build(srcdir="../notes", targetdir="../site")
 	@info "Building Zettelkasten"
 
-	rm("site", recursive=true, force=true)
-	mkpath("site")
+	rm(targetdir, recursive=true, force=true)
+	mkpath(targetdir)
 
-	cp("assets", "site/assets")
+	cp("assets", joinpath(targetdir, "assets"))
 
-	notes = findnotes()
+	notes = findnotes(srcdir)
 
-	for (name, note) in notes
-		println("Rendering note ", repr(name))
-		rendernote(Val(note.kind), name, note)
-	end
-
-	cd("site") do
+	cd(targetdir) do
+		# index page
 		open("index.html", "w") do f
 			write(f, Templates.toc(notes))
+		end
+
+		# individual notes
+		for (name, note) in notes
+			println("Rendering note ", repr(name))
+			rendernote(Val(note.kind), name, note)
 		end
 	end
 

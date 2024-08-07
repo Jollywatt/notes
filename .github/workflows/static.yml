@@ -37,7 +37,7 @@ jobs:
         with:
           version: '1.10'
       - name: Build site
-        run: ./build.jl
+        run: ./src/build.jl
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

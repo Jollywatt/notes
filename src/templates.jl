@@ -22,7 +22,7 @@ base(content; title, head="") = """
 
 note(content; title, args...) = base("""
 	<div id="header">
-		<a href="$ROOT">Joseph's notes</a> ▸ $title
+		<a href="$ROOT">Joseph's notes</a> / $title
 	</div>
 	<div id="content">
 		$content
@@ -45,13 +45,15 @@ julia(; title, code) = note("""
 
 
 toc(notes) = base("""
-	Welcome to my humble Zettelkasten garden of notes.
+	<div id="content">
+	Welcome to my Zettelkasten garden of notes.
 
 	<ul>
 	$(join("""
 		<li><a href="$ROOT/$name">$name</a> ($(info.kind))</li>
 	""" for (name, info) in sort(collect(notes), by=first)))
 	</ul>
+	</div>
 	"""; title = "Home")
 
 end # module
