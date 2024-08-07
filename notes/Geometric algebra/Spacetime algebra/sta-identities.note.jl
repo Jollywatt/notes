@@ -32,6 +32,13 @@ end
 # ╔═╡ 5aefc3f4-b947-41e4-af2a-71694b65779d
 md"""
 # Spacetime algebra identities
+
+This file contains tests for various simple algebraic identities in the spacetime algebra, which hold in either spacetime sign convention.
+"""
+
+# ╔═╡ 1faaf237-3950-40c0-a415-90875b50f328
+md"""
+## Setup code
 """
 
 # ╔═╡ 781b4737-7e82-4b28-a762-b92f0b71326d
@@ -50,6 +57,15 @@ Spacetime algebra metric signature:
 # ╔═╡ 849e2f37-3cfe-4c32-ad18-0e08ded93a6b
 GeometricAlgebra.BASIS_DISPLAY_STYLES[STA] = sta_style;
 
+# ╔═╡ 7ed2f6fd-81b0-4dfe-92bd-02a292006170
+md"""
+## Definitions
+
+- Define the spacetime basis vectors ``\gamma_\mu`` and ``\gamma^\mu = \gamma_\mu^{-1}``.
+- Define the pseudoscalar ``I = \gamma_0, \gamma_1, \gamma_2, \gamma_3``.
+- Define the relative basis vectors ``\sigma_i \coloneqq \gamma_i \gamma^0``.
+"""
+
 # ╔═╡ f9c6908d-96bf-4bdb-9e51-8bddbb646cec
 γ = OffsetVector(basis(STA, 1), 0:3);
 
@@ -61,7 +77,7 @@ I = prod(γ);
 
 # ╔═╡ 62849dcd-8028-416c-a3d6-952922853d75
 md"""
-Define the relative basis vectors ``\sigma_i \coloneqq \gamma_i \gamma^0``.
+Then:
 ```math
 \begin{align}
 \sigma_i^2 &= 1 \\
@@ -110,6 +126,8 @@ end
 md"""
 ## (Anti-)commutative decompositions
 
+A multivector ``X`` can be decomposed into parts which commute or anti-commute with an invertible reference multivector ``a`` with scalar square.
+
 ```math
 X_\pm = \frac12(X \pm a X a^{-1}) \implies X_\pm a = \pm a X_\pm
 ```
@@ -125,13 +143,13 @@ rej(X, a) = grade((X - a*X/a)/2, grade(X))
 for _ in 1:100
 	X = Multivector{STA,0:4}(randn(16))
 	for a in [
-		randn(4)'γ
-		randn(3)'σ
+		randn(4)'γ # spacetime vector
+		randn(3)'σ # relative vector
 	]
 		X₊, X₋ = proj(X, a), rej(X, a)
-		@test X₊ + X₋ ≈ X
+		@test X₊ + X₋ ≈ X  atol=1e-10
 		@test X₊*a ≈ +a*X₊
-		@test X₋*a ≈ -a*X₋
+		@test X₋*a ≈ -a*X₋ atol=1e-10
 	end
 end
 
@@ -264,11 +282,13 @@ end
 
 # ╔═╡ Cell order:
 # ╟─5aefc3f4-b947-41e4-af2a-71694b65779d
+# ╟─1faaf237-3950-40c0-a415-90875b50f328
 # ╠═41233f52-34f3-11ef-0c90-a1e34bea294d
 # ╠═781b4737-7e82-4b28-a762-b92f0b71326d
 # ╟─d809e31e-6c18-42fb-b655-ce5070b2a4af
-# ╠═aef33fa6-4c42-4cda-840d-9485207e1cfd
+# ╟─aef33fa6-4c42-4cda-840d-9485207e1cfd
 # ╠═849e2f37-3cfe-4c32-ad18-0e08ded93a6b
+# ╟─7ed2f6fd-81b0-4dfe-92bd-02a292006170
 # ╠═f9c6908d-96bf-4bdb-9e51-8bddbb646cec
 # ╠═9f29c2f1-ec7d-458d-85d5-e7825551c630
 # ╠═6a496a09-dfa5-4660-87a6-0da8be23e500

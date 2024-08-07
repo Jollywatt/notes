@@ -1,3 +1,8 @@
+#import "@local/notes:0.1.0"
+
+#show: notes.style
+
+
 #let grade(it) = $lr(angle.l it angle.r)$
 
 = Spacetime algebra without reference to a metric signature
