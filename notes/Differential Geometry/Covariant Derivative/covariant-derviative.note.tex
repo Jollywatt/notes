@@ -1,0 +1,147 @@
+\documentclass{article}
+\usepackage[a5paper]{geometry}
+
+\usepackage{physics}
+\usepackage[math-style=ISO]{unicode-math}
+\usepackage{mathrsfs,dsfont}
+
+\usepackage{empheq}
+\usepackage{environ}
+
+% Environment for boxed equations, use as e.g., `\begin{eqbox}[align]...\end{eqnbox}`
+\NewEnviron{eqbox}[1][align]{\begin{empheq}[box=\fbox]{#1}\BODY\end{empheq}}
+
+
+\usepackage{autonum}
+
+\newtheorem{definition}{Definition}
+
+\DeclareMathOperator{\D}{\mathscr{D}}
+\DeclareMathOperator{\T}{T}
+\DeclareMathOperator{\TT}{\mathds T}
+\newcommand{\e}{\symbf e}
+\newcommand{\dx}{\dd x}
+\renewcommand{\cal}{\mathcal}
+\newcommand{\Cinf}{\cal C^\infty(\cal M)}
+\renewcommand{\dd}{{\mathbf d}}
+\DeclareMathOperator{\secs}{\symrm\Gamma}
+
+\begin{document}
+
+Let $\cal E$ be a vector bundle with projection $π : \cal E \to \cal M$ onto base manifold $\cal M$.
+Let the manifold be of dimension $\dim\cal M = n$ and the fibre of dimension $s$, so that the total bundle is of dimension $\dim E = n + s$.
+Let $\TT\cal E$ denote the space of tensors constructed from $\cal E$,
+\begin{align}
+	\TT\cal E = \bigoplus_{r,s=0}^\infty \underbrace{\cal E \otimes \dots \otimes \cal E}_r \otimes \underbrace{\cal E^* \otimes \dots \otimes \cal E^*}_s
+.\end{align}
+Let $\secs$ denote the set of local sections.
+\begin{definition}
+	A \emph{covariant derivative} is a map
+	\begin{align}
+		\D : \secs(\TT\cal E) \to \secs(\TT\cal E \otimes \T^*\cal M) \equiv \Omega^1(\cal M, \TT\cal E)
+	\end{align}
+	which is
+	\begin{enumerate}
+		\item a derivation:
+		\begin{align}
+			\D(A\otimes B) &= \D(A)\otimes B + A\otimes \D(B)
+		\end{align}
+		whenever $A\otimes B \in \secs(\TT \cal E)$; and
+
+		\item coincident with the exterior derivative
+		\begin{align}
+			\D(f) = \dd f %\in \secs(\wedge^1(T\cal M)) \cong \secs(\T^*\cal M)
+		\end{align}
+		on scalar fields $f \in \TT^0_0\cal E \cong \Cinf$.
+	\end{enumerate}
+\end{definition}
+Note that we are to view $\Cinf \ni f$ as the one-dimensional vector bundle $\TT^0_0\cal E \ni f\symbf 1$, identifying the scalar multiplication by $f$ of tensors $\symbf e \in \TT\cal E$ with the \emph{right} tensor product, $f\symbf e \cong \symbf e \otimes f\symbf 1$.
+This identification occurs so that we automatically have
+\begin{align}
+	\D(f\symbf e) = \D(\symbf e \otimes f\symbf 1)
+	&= \symbf e\otimes \D(f) + f\D(\symbf e)
+\\	&= \symbf e \otimes \dd f + f\D(\symbf e)
+,\end{align}
+which otherwise needs to be included in the definition. (Actually, no.)
+
+Let $(\e_1, ..., \e_s)$ be a frame in the vector bundle $\cal E$ of dimension $s$, so that any vector field $\symbf v \in \cal E$ has the form $\symbf v = v^a\e_a$.
+Let $(\dx^1, ..., \dx^n)$ be a coframe in the cotangent space $\T^*\cal M$.
+Any element $\symbf X \in \cal E \otimes \T^*\cal M$ is of the form $\symbf X = X^a{}_μ \e_a \otimes \dx^μ$.
+Latin indices are for components in the vector bundle $\cal E$, and greek indices are for components in the tangent bundle $\TT\T\cal M \supset \T^*\cal M$.
+In general,
+\begin{align}
+	\D \e_a &= (\D \e_a)^b{}_μ \e_b \otimes \dx^μ = \e_b \otimes \symbfθ^b{}_a
+% ,&	\symbfθ^b{}_a &\coloneq (\D\e_a)^b{}_β\dx^β 
+,\end{align}
+where the \emph{connection 1-forms} are
+\begin{eqbox}[align]
+	\symbfθ^b{}_a &\coloneq (\D\e_a)^b{}_μ\dx^μ
+,\end{eqbox}
+which define the \emph{connection coefficients} by %$Γ^b{}_{βa}$.
+\begin{eqbox}[align]
+	Γ^b{}_{μa} \dx^μ \coloneq{}& \symbfθ^b{}_a 
+\\	\iff Γ^b{}_{μa} ={}& (\symbfθ^b{}_a)_μ
+.\end{eqbox}
+The $\T^*\cal M$ index (here, $μ$) of the connection coefficients $Γ^b{}_{μa}$ is known as the \emph{differentiating index} (conventionally, the 2nd index).
+
+Then, for a general vector $\symbf v \in \cal E$ we have
+\begin{align}
+	\D\symbf v = \D(v^a\e_a)
+	&= \e_a\otimes (\D v^a) + v^a(\D\symbf e_a)
+\\	&= \e_a\otimes \dd v^a + v^a\e_b \otimes \symbfθ^b{}_a
+% \\	&= \e_a\otimes \qty(\dd v^a + v^b \symbfθ^a{}_b)
+\\	&= \qty(∂_μv^a + Γ^a{}_{μb}v^b)\e_a \otimes \dx^μ
+% \\	&= dv^a \otimes \e_a + v^a \e_b \otimes \symbfθ^b_a
+\\	&\eqcolon (\D_μv^a) \e_a \otimes \dx^μ
+.\end{align}
+
+At the cost of clarity, we may write the \emph{covariant exterior derivative}
+\begin{align}
+	\D = \dd + \underbar{\symbfθ}
+\end{align}
+where $\underbar{\symbfθ} = [\symbf θ^a{}_b]\e_a\otimes\e^b = [θ^a{}_{βb}\dx^β]\e_a\otimes\e^b$ is a matrix (underbar) of 1-forms (bold), so that
+\begin{align}
+	\D \vec v &= \dd\vec v + \underbar{\symbfθ}\vec v
+\\	(\D\vec v)^a &= (\dd\vec v)^a + \symbf θ^a{}_bv^b
+\\	&= (∂_μ v^a + Γ^a{}_{μb}v^b) \, \dd x^μ
+\\	\D_μ v^a &= ∂_μ v^a + Γ^a{}_{μb}v^b
+.\end{align}
+A choice of covariant derivative gives a notion of parallel transport via $\D\symbf v = 0$.
+
+\subsection*{Curvature Form}
+
+\begin{align}
+	\underbar{\symbf F} &= \dd \underbar{\symbfθ} + \underbar{\symbfθ} \wedge \underbar{\symbfθ}
+\\	\symbf F^a{}_b &= (\dd\underbar{\symbfθ})^a{}_b + \symbf θ^a{}_c \wedge \symbf θ^c{}_b
+\\	F^a{}_{bμν}\dx^μ\wedge\dx^ν &= \qty(∂_μ Γ^a{}_{νb} + Γ^a{}_{μc}Γ^c{}_{νb})\dx^μ\wedge\dx^ν
+\\	2F^a{}_{b[μν]} &= ∂_μ Γ^a{}_{νb} - ∂_ν Γ^a{}_{μb} + Γ^a{}_{μc}Γ^c{}_{νb} - Γ^a{}_{νc}Γ^c{}_{μb}
+\end{align}
+
+
+\subsection*{Notations}
+\begin{center}
+\makebox[\textwidth][c]{
+	\begin{tabular}{r|ccc}
+		& general & general relativity & $U(1)$ gauge theory
+	\\
+		fibre
+			& $\TT\cal E$
+			& $\TT(\T\cal M)$
+			& $\mathds C$
+	\\	covariant derivative
+			& $\D_μ$
+			& $\nabla_μ$
+			& $D_μ$
+	\\	connection 1-form
+			& $\symbf θ^a{}_b$
+			& $Γ^a{}_{μb}\dd x^μ$
+			& $-i\frac{e}{\hbar}A_μ \dd x^μ$
+	\\ curvature 2-form
+			& $\symbf F^a{}_b$
+			& $\symbf R^a{}_b = \frac12 R^a{}_{bμν}\dx^μ\wedge\dx^ν$
+			& $F_{μν} = ∂_μ A_ν - ∂_ν A_μ$
+	\end{tabular}
+}
+\end{center}
+
+\end{document}

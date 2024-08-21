@@ -15,6 +15,7 @@ function multinote(byext::Dict{Symbol,String})
 
 	combos = Dict(
 		Set([:typ, :pdf]) => (file=:pdf, src=:typ),
+		Set([:tex, :pdf]) => (file=:pdf, src=:tex),
 		Set([:jl, :html]) => (file=:html, src=:jl),
 		Set([:jl]) => (file=:jl, src=nothing),
 	)

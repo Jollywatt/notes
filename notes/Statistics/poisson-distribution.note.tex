@@ -1,0 +1,62 @@
+\documentclass{article}
+\usepackage[a5paper,margin=2cm]{geometry}
+
+\usepackage{unicode-math}
+\usepackage{dsfont}
+\usepackage{physics}
+\usepackage{autonum}
+
+\newcommand{\B}{\mathds B}
+
+\begin{document}
+
+\section*{The Poission Distribution}
+
+\subsection*{Discrete case}
+
+Suppose an event has a probability $p \in [0, 1]$ of occuring at each timestep $k$, where timesteps are equally spaced with separation $Δt$.
+Over the duration $kΔt ≤ t < (k + n)Δt$, the event can occur between zero and $n$ times. (The event cannot occur more than once in a single timestep, and different occurances are uncorrelated.)
+
+
+Let $P(k, n)$ be the probability that the event occurs exactly $k$ times in $n$ timesteps.
+Let $e_1, …, e_n \in \qty{0, 1}$ be the individual outcomes at each timestep, with $e_i = 1$ if the event occured at timestep $i$ (probability $p$) and $e_i = 0$ if the event did not occur (probability $1 - p$).
+Each scenario $(e_1, …, e_n)$ has totoal probability $p^k p^{n - k}$, where $k$ is the number of occurances $e_i = 1$ and $k - n$ the number of non-occurances $e_i = 0$.
+There are $\binom{n}{k}$ such scenarios of length $n$ with exactly $k$ occurances.
+Hence,
+\begin{align}
+	P(k, n) = \binom{n}{k} p^n (1 - p)^{k - n}
+.\end{align}
+Note that, since $P(n, k) > 0$ for any $0 ≤ n ≤ k$, we expect all such outcomes to have total probability of unity.
+By the binomial theorem,
+\begin{align}
+	\sum_{n = 0}^k P(k, n)
+	&= \sum_{n = 0}^k \binom{n}{k} p^n (1 - p)^{k - n}
+	= (p + (1 - p))^k = 1
+.\end{align}
+
+\subsection*{Continuous case}
+
+In the continuous case, the event has a constant probability per unit time $ρ$ of occuring.
+$P(k, t)$ is then the probability that the event occurs exactly $k$ times within a duration $t \in \mathds R$.
+The continuous case is obtained in the limit of the discrete case where the timestep size vanishes $Δt → 0$ and the probability per unit time $ρ = p/Δt$ remains fixed.
+We have $t = k\,Δt$ and $p = ρ\,Δt$.
+
+\begin{align}
+	P(k, t) &= \lim_{Δt → 0} \binom{t/Δt}{n} (ρΔt)^n (1 - ρΔt)^{t/Δt - n}
+\intertext{Define $η = (ρΔt)^{-1}$.}
+	&= \lim_{η → ∞} \binom{tρη}{n} \qty(\frac{1}{η})^n \qty(1 - \frac{1}{η})^{tρη - n}
+\intertext{Since $\qty(1 - \frac{1}{η}) → \qty(1 + \frac{1}{η})^{-1}$ in the limit $η → ∞$,}
+	&= \lim_{η → ∞} \binom{tρη}{n} \qty(\frac{1}{η})^n \qty(1 + \frac{1}{η})^{-tρη + n}
+\\	&= \lim_{η → ∞} \binom{tρη}{n} \qty(\frac{1}{η})^n \qty(1 + \frac{1}{η})^n e^{-tρ}
+\intertext{The limit of the term $\qty(1 + \frac{1}{η})^n$ is unity. Since $\binom{n}{k} = \frac{n!}{k!(n - k)!}$,}
+	&= \lim_{η → ∞} \frac{tρη!}{n!(tρη - n)!} \qty(\frac{1}{η})^n e^{-tρ}
+\\	&= \frac{e^{-tρ}}{n!} \lim_{η → ∞} \prod_{k = 0}^{n - 1} (tρη - k) \qty(\frac{1}{η})^n
+\\	&= \frac{e^{-tρ}}{n!} \lim_{η → ∞} \prod_{k = 0}^{n - 1} \frac{tρη - k}{η}
+\\	&= \frac{e^{-tρ}}{n!} \lim_{η → ∞} \prod_{k = 0}^{n - 1} \qty(tρ - \frac{k}{η})
+\\	&= \frac{e^{-tρ}}{n!} (tρ)^n
+\\	&= \frac{(tρ)^n}{n!} e^{-tρ}
+\\	&= \frac{λ^n}{n!} e^{-λ}
+\end{align}
+
+
+\end{document}
