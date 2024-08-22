@@ -44,17 +44,33 @@ julia(; title, code) = note("""
 	""")
 
 
-toc(notes) = base("""
+toc(tree) = base("""
 	<div id="content">
 	Welcome to my Zettelkasten garden of notes.
 
-	<ul>
-	$(join("""
-		<li><a href="$ROOT/$name">$name</a> ($(info.kind))</li>
-	""" for (name, info) in sort(collect(notes), by=first)))
-	</ul>
+	$(toc_item(tree))
 	</div>
 	"""; title = "Home")
+
+toc_item((name, info)::Pair{String,<:NamedTuple}) = """
+	<li><a href="$ROOT/$name">$name</a> ($(info.kind))</li>
+"""
+
+toc_item(items::AbstractVector) = """
+	<ul>
+	$(join(toc_item.(items)))
+	</ul>
+"""
+
+function toc_item((subdir, items)::Pair{String,<:AbstractVector})
+	"""
+	<li>$subdir
+		<ul>
+		$(join(toc_item.(items)))
+		</ul>
+	</li>
+	"""
+end
 
 end # module
 
