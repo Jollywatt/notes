@@ -55,6 +55,42 @@ function findnotes(srcdir)
 end
 
 
+
+function totree(notes::Dict{String,<:NamedTuple})
+	paths = [(name => info) => splitpath(dirname(info.file)) for (name, info) in notes]
+	flattenned = sort!(paths, by=last)
+	totree(flattenned)
+end
+
+function totree(nodes::AbstractVector{<:Pair})
+	tree = "root" => []
+	stack = [tree]
+	for (node, path) in nodes
+
+		i = 1
+		while i < min(length(path) + 1, length(stack))
+			path[i] == stack[i + 1].first || break
+			i += 1
+		end
+
+		while length(stack) > i
+			pop!(stack)
+		end
+
+		while length(stack) <= length(path)
+			subtree = path[length(stack)] => []
+			push!(stack[end].second, subtree)
+			push!(stack, subtree)
+		end
+
+		push!(stack[end].second, node)
+
+	end
+	tree.second
+end
+
+
+
 """
 Make a link of the source file in current directory,
 with `.note.` removed from the filename.
@@ -117,8 +153,12 @@ function build(srcdir="../notes", targetdir="../site")
 
 	cd(targetdir) do
 		# index page
+		tree = totree(notes)
+		for i in splitpath(srcdir) # strip srcdir path prefix
+			tree = tree[1].second
+		end
 		open("index.html", "w") do f
-			write(f, Templates.toc(notes))
+			write(f, Templates.toc(tree))
 		end
 
 		# individual notes
