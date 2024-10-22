@@ -41,3 +41,13 @@
 
 	body
 }
+
+#let result-box(body, tint: green) = {
+	block(
+		width: 100%,
+		inset: 1em,
+		stroke: tint,
+		fill: tint.lighten(95%),
+		body,
+	)
+}
