@@ -25,7 +25,7 @@ function multinote(byext::Dict{Symbol,String})
 		byrole = map(roles) do ext
 			get(byext, ext, nothing)
 		end
-		(kind=roles.file, byrole...)
+		(kind=roles.file, srckind=roles.src, byrole...)
 	else
 		@error "Can't recognise multi-file note" byext
 	end
@@ -111,6 +111,7 @@ function rendernote(::Val{:pdf}, name, note)
 		html = Templates.pdf(
 			title=name,
 			file=pdf,
+			meta=note
 		)
 		write(f, html)
 	end
@@ -122,6 +123,7 @@ function rendernote(::Val{:jl}, name, note)
 		html = Templates.julia(
 			title=name,
 			code=read(note.file, String),
+			meta=note
 		)
 		write(f, html)
 	end

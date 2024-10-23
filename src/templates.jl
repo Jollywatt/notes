@@ -4,6 +4,8 @@ ROOT = "/notes"
 
 permalink(url) = "https://jollywatt.github.io$ROOT/"*url
 
+link(url, label) = "• <a href=$(repr(url))>$label</a>"
+
 base(content; title, head="") = """
 	<!DOCTYPE html>
 	<html>
@@ -20,24 +22,42 @@ base(content; title, head="") = """
 	</html>
 	"""
 
-note(content; title, args...) = base("""
+note(content; title, meta, args...) = base("""
 	<div id="header">
-		<a href="$ROOT">Joseph's notes</a> / $title
+		<a href="$ROOT">Joseph’s notes</a> / $title
+		$(let url = "$title.$(meta.kind)"
+			if meta.kind == :pdf
+				link(url, "raw PDF")
+			elseif meta.kind == :jl
+				link(url, "Julia source")
+			else
+				""
+			end
+		end)
+		$(let url = "$title.$(meta.srckind)"
+			if meta.srckind == :typ
+				link(url, "typst source")
+			elseif meta.srckind == :tex
+				link(url, "LaTeX source")
+			else
+				""
+			end
+		end)
 	</div>
 	<div id="content">
 		$content
 	</div>
 	"""; title, args...)
 
-pdf(; title, file) = note("""
+pdf(; title, file, meta) = note("""
 	<object data="$ROOT/$file" type="application/pdf"/>
-	"""; title)
+	"""; title, meta)
 
-julia(; title, code) = note("""
+julia(; title, code, meta) = note("""
 	<div class="scroll">
 		<pre><code class="language-julia">$code</code></pre>
 	</div>
-	"""; title, head="""
+	"""; title, meta, head="""
 	<link rel="stylesheet" href="$ROOT/assets/highlight/styles/default.css">
 	<script src="$ROOT/assets/highlight/highlight.min.js"></script>
 	<script>hljs.highlightAll();</script>
@@ -47,6 +67,9 @@ julia(; title, code) = note("""
 toc(tree) = base("""
 	<div id="content" class="pad">
 	Welcome to my Zettelkasten garden of notes.
+	<p>
+	This site contains loosely organised scraps and notes from research and coursework.
+	</p>
 
 	$(toc_item(tree))
 	</div>
