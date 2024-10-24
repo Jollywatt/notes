@@ -142,29 +142,30 @@ function P_conditional(X1, X0, Y0)
 	Normal(μ1, max(0, Σ1))
 end
 
+# ╔═╡ 47e91423-0908-4bf0-aec1-97374dbd286f
+function conditional()
+
+# ╔═╡ f28a3c93-3ef8-4e8e-a4cc-d15b50c022dc
+md"""
+## Conditioning on noise-free observations
+"""
+
 # ╔═╡ 4309432c-6b55-4869-8c72-e0c5794c99b5
 X0 = [1, 6, 9] # previous data positions
 
 # ╔═╡ a69b3bdd-5156-4a7b-8bf4-7bf04bf341f8
 Y0 = [1, 1, 0] # previous data values
 
-# ╔═╡ 6b8d933e-c2c1-450d-9682-286ae3e13052
-@bind x1 Slider(x, show_value=true)
-
-# ╔═╡ 7ecf0e70-ce85-45ea-80f2-0a6a23d81af4
-d = P_conditional(x1, X0, Y0)
-
 # ╔═╡ 31437240-47a3-4f15-a39e-b74f695e02ff
-let
+begin
 	ds = P_conditional.(x, Ref(X0), Ref(Y0))
 	plot(x, μ.(x), ribbon=2k.(x, x), label="μ")
 	plot!(x, mean.(ds), ribbon=2var.(ds), label="P(y | data)")
 	scatter!(X0, Y0)
-	N = 100
-	Y1 = vec(rand(d, N))
-	scatter!(fill(x1, N), Y1, mark=:x, alpha=0.5)
-	ylims!(-3, 3)
 end
+
+# ╔═╡ b0e683d1-630f-4f5f-a7cc-ce4d418ea416
+
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1433,10 +1434,11 @@ version = "1.4.1+1"
 # ╠═2c7f52c0-c96d-468e-a4ae-94e62ff26bdc
 # ╟─c963972c-c141-40e3-927a-04d0f473c219
 # ╠═410d98fa-ef15-403c-853b-cb1e3bed12da
+# ╠═47e91423-0908-4bf0-aec1-97374dbd286f
+# ╟─f28a3c93-3ef8-4e8e-a4cc-d15b50c022dc
 # ╠═4309432c-6b55-4869-8c72-e0c5794c99b5
 # ╠═a69b3bdd-5156-4a7b-8bf4-7bf04bf341f8
-# ╠═6b8d933e-c2c1-450d-9682-286ae3e13052
-# ╠═7ecf0e70-ce85-45ea-80f2-0a6a23d81af4
 # ╠═31437240-47a3-4f15-a39e-b74f695e02ff
+# ╠═b0e683d1-630f-4f5f-a7cc-ce4d418ea416
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
