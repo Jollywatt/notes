@@ -2,13 +2,47 @@
 
 html {
 	--header-size: 20px;
-	--background: #808080;
-	background: var(--background);
+	--pdf-background: #808080;
+	background: var(--pdf-background);
 	font-family: 'Linux Libertine O', sans-serif;
+}
+
+html:has(object) {
+	background: var(--pdf-background);
 }
 
 html:has(.scroll) {
 	overflow: hidden;
+}
+
+html:has(#toc) {
+	background: #14141D;
+	color: wheat;
+}
+
+html:has(#toc) a:any-link { color: #F5DEB3; }
+html:has(#toc) a:visited { color: #B084CD; }
+html:has(#toc) a:active { color: white; }
+html:has(#toc) a:hover { color: white; }
+
+#background {
+	position: fixed;
+	top: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	width: calc(300px + 70vw);
+	mix-blend-mode: screen;
+	filter: invert();
+	opacity: 0.1;
+	z-index: -1000;
+	mask-image: -webkit-gradient(
+		linear, right top, left bottom, 
+		from(rgba(0,0,0,1)), to(rgba(0,0,0,0))
+	);
+}
+
+#background ~ h1 {
+	padding-top: 80px;
 }
 
 pre {

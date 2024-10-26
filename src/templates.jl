@@ -116,14 +116,15 @@ html(n, htmlcontent) = """
 	"""
 
 toc(tree) = base("""
+	<img id="background" src="$ROOT/assets/background.png"/>
 	<div id="toc" class="pad">
-	<h1>Joseph’s notes</h1>
-	<p>
-	Welcome to my Zettelkasten garden of notes.
-	Here is where I put scraps and notes from my research and coursework.
-	</p>
+		<h1>Joseph’s notes</h1>
+		<p>
+		Welcome to my Zettelkasten garden of notes.
+		Here is where I put scraps and notes from my research and coursework.
+		</p>
 
-	$(toc_item(tree))
+		$(toc_item(tree))
 	</div>
 	"""; title = "Home")
 
