@@ -2,8 +2,12 @@
 
 html {
 	--header-size: 20px;
-	background: #808080;
+	--background: #808080;
+	background: var(--background);
 	font-family: 'Linux Libertine O', sans-serif;
+}
+
+html:has(.scroll) {
 	overflow: hidden;
 }
 
@@ -23,10 +27,9 @@ body {
 
 #content {
 	max-width: 800px;
-	width: 100vw;
+/*	width: 100vw;*/
 	height: calc(100vh - var(--header-size));
 	margin: auto;
-	overflow: hidden;
 }
 
 .pad {
@@ -36,6 +39,10 @@ body {
 object[type="application/pdf"] {
 	width: 100%;
 	height: 100%;
+}
+
+.noscroll {
+	overflow: hidden;
 }
 
 .scroll {

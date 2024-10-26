@@ -11,21 +11,21 @@ SOURCE_DIR = "../notes"
 TARGET_DIR = "../site"
 
 
-function multinote(byext::Dict{Symbol,String})
+"""
+Infer the type or kind of a note by which file extensions are present.
+For example, a pair of `*.tex` and `*.pdf` files with the same name form a LaTeX note.
+"""
+function notekind(byext::Dict{Symbol,String})
 
 	combos = Dict(
-		Set([:typ, :pdf]) => (file=:pdf, src=:typ),
-		Set([:tex, :pdf]) => (file=:pdf, src=:tex),
-		Set([:jl, :html]) => (file=:html, src=:jl),
-		Set([:jl]) => (file=:jl, src=nothing),
+		Set([:typ, :pdf]) => :typst_pdf,
+		Set([:tex, :pdf]) => :latex_pdf,
+		Set([:jl, :html]) => :pluto_notebook,
+		Set([:jl]) => :julia_code,
 	)
 
 	if keys(byext) in keys(combos)
-		roles = combos[keys(byext)]
-		byrole = map(roles) do ext
-			get(byext, ext, nothing)
-		end
-		(kind=roles.file, srckind=roles.src, byrole...)
+		combos[keys(byext)]
 	else
 		@error "Can't recognise multi-file note" byext
 	end
@@ -33,7 +33,8 @@ function multinote(byext::Dict{Symbol,String})
 end
 
 function findnotes(srcdir)
-	filesbyname = Dict{String,Dict{Symbol,String}}()
+	notefiles = Dict{String,Dict{Symbol,String}}()
+	notedirs = Dict{String,Vector{String}}()
 
 	for (root, dirs, files) in walkdir(srcdir)
 		filter!(!startswith("."), files)
@@ -44,20 +45,34 @@ function findnotes(srcdir)
 			name, ext = m
 			path = joinpath(root, file)
 
-			if name ∉ keys(filesbyname)
-				filesbyname[name] = Dict()
+			if name ∉ keys(notefiles)
+				notefiles[name] = Dict()
 			end
-			filesbyname[name][Symbol(ext)] = path
+			notefiles[name][Symbol(ext)] = path
+
+			if name ∉ keys(notedirs)
+				notedirs[name] = splitpath(chopprefix(root, srcdir))
+			end
 		end
 	end
 
-	Dict(name => multinote(files) for (name, files) in filesbyname)
+	notekinds = Dict(name => notekind(byext) for (name, byext) in notefiles)
+
+	Dict(
+		name => (
+			name=name,
+			dir=notedirs[name],
+			kind=notekinds[name],
+			files=notefiles[name],
+		)
+		for name in keys(notefiles)
+	)
 end
 
 
 
-function totree(notes::Dict{String,<:NamedTuple})
-	paths = [(name => info) => splitpath(dirname(info.file)) for (name, info) in notes]
+function totree(notes::Dict{String})
+	paths = [(name => info) => info.dir for (name, info) in notes]
 	flattenned = sort!(paths, by=last)
 	totree(flattenned)
 end
@@ -101,37 +116,73 @@ function tohere(srcfile::String)
 	dest
 end
 
+template(::Val{:typst_pdf}, n) = Templates.pdf(n)
+template(::Val{:latex_pdf}, n) = Templates.pdf(n)
+template(::Val{:pluto_notebook}, n) = Templates.html(n)
+template(::Val{:julia_code}, n) = Templates.code(n, read(n.files[:jl], String), :julia)
+template(::Val, n) = @warn "Skipping note" n
+
+function rendernote(note::NamedTuple)
+	for (ext, file) in note.files
+		ext == :html && continue
+		note.files[ext] = tohere(file)
+	end
 
 
-
-function rendernote(::Val{:pdf}, name, note)
-	tohere(note.src)
-	pdf = tohere(note.file)
-	open("$name.html", "w") do f
-		html = Templates.pdf(
-			title=name,
-			file=pdf,
-			meta=note
-		)
+	open("$(note.name).html", "w") do f
+		html = template(Val(note.kind), note)
 		write(f, html)
 	end
+	# rendernote(Val(note.kind); note.name, note.dir, note.files)
 end
 
-function rendernote(::Val{:jl}, name, note)
-	file = tohere(note.file)
-	open("$name.html", "w") do f
-		html = Templates.julia(
-			title=name,
-			code=read(note.file, String),
-			meta=note
-		)
-		write(f, html)
-	end
-end
+# function rendernote(::Val{:typst_pdf}; name, dir, files)
+# 	tohere(files[:typ])
+# 	pdf = tohere(files[:pdf])
+# 	open("$name.html", "w") do f
+# 		html = Templates.pdf(
+# 			title=name,
+# 			file=pdf,
+# 			meta=note
+# 		)
+# 		write(f, html)
+# 	end
+# end
 
-function rendernote(::Val{:html}, name, note)
-	tohere(note.file)
-end
+# function rendernote(::Val{:julia_code}; name, dir, files)
+# 	file = tohere(note.file)
+# 	open("$name.html", "w") do f
+# 		html = Templates.julia(
+# 			title=name,
+# 			code=read(note.file, String),
+# 			meta=note
+# 		)
+# 		write(f, html)
+# 	end
+# end
+
+# function rendernote(::Val{:html}, name, note)
+# 	# tohere(note.file)
+# 	open("$name.html", "w") do f
+# 		# html = read(note.file, String)
+# 		html = Templates.html(
+# 			title=name,
+# 			file=note.file,
+# 			meta=note,
+# 		)
+# 		write(f, html)
+# 		# write(f, """
+# 		# <span id="floating-banner-note">HELLO</span>
+# 		# <style>
+# 		# #floating-banner-note {
+# 		# 	position: fixed;
+# 		# 	top: 0;
+# 		# 	left: 0;
+# 		# }
+# 		# </style>
+# 		# """)
+# 	end
+# end
 
 function exportpermalinks(notes)
 	open("typst-template/permalinks.csv", "w") do file
@@ -155,10 +206,8 @@ function build(srcdir="../notes", targetdir="../site")
 
 	cd(targetdir) do
 		# index page
-		tree = totree(notes)
-		for i in splitpath(srcdir) # strip srcdir path prefix
-			tree = tree[1].second
-		end
+		tree = reduce(vcat, last.(totree(notes)))
+		# tree = totree(notes)
 		open("index.html", "w") do f
 			write(f, Templates.toc(tree))
 		end
@@ -166,7 +215,7 @@ function build(srcdir="../notes", targetdir="../site")
 		# individual notes
 		for (name, note) in notes
 			println("Rendering note ", repr(name))
-			rendernote(Val(note.kind), name, note)
+			rendernote(note)
 		end
 	end
 

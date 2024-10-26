@@ -4,7 +4,7 @@ ROOT = "/notes"
 
 permalink(url) = "https://jollywatt.github.io$ROOT/"*url
 
-link(url, label) = "• <a href=$(repr(url))>$label</a>"
+link(name, ext, label) = "• <a href=$(repr("$name.$ext"))>$label</a>"
 
 base(content; title, head="") = """
 	<!DOCTYPE html>
@@ -22,53 +22,79 @@ base(content; title, head="") = """
 	</html>
 	"""
 
-note(content; title, meta, args...) = base("""
+headercontent(n) = """
+	<a href="$ROOT">Joseph’s notes</a> / $(n.name)
+	$(
+		if :pdf in keys(n.files)
+			link(n.name, :pdf, "raw PDF")
+		else
+			""
+		end
+	)
+	$(
+		if :typ in keys(n.files)
+			link(n.name, :typ, "typst source")
+		elseif :tex in keys(n.files)
+			link(n.name, :tex, "LaTeX source")
+		elseif :jl in keys(n.files)
+			link(n.name, :jl, "Julia source")
+		else
+			""
+		end
+	)
+"""
+
+
+note(content, n; args...) = base("""
 	<div id="header">
-		<a href="$ROOT">Joseph’s notes</a> / $title
-		$(let url = "$title.$(meta.kind)"
-			if meta.kind == :pdf
-				link(url, "raw PDF")
-			elseif meta.kind == :jl
-				link(url, "Julia source")
-			else
-				""
-			end
-		end)
-		$(let url = "$title.$(meta.srckind)"
-			if meta.srckind == :typ
-				link(url, "typst source")
-			elseif meta.srckind == :tex
-				link(url, "LaTeX source")
-			else
-				""
-			end
-		end)
+		$(headercontent(n))
 	</div>
 	<div id="content">
 		$content
 	</div>
-	"""; title, args...)
+	"""; title=n.name, args...)
 
-pdf(; title, file, meta) = note("""
-	<object data="$ROOT/$file" type="application/pdf"/>
-	"""; title, meta)
+pdf(n) = note("""
+	<object data="$ROOT/$(n.files[:pdf])" type="application/pdf"/>
+	""", n)
 
-julia(; title, code, meta) = note("""
+code(n, text, lang) = note("""
 	<div class="scroll">
-		<pre><code class="language-julia">$code</code></pre>
+		<pre><code class="language-$lang">$text</code></pre>
 	</div>
-	"""; title, meta, head="""
+	""", n, head="""
 	<link rel="stylesheet" href="$ROOT/assets/highlight/styles/default.css">
 	<script src="$ROOT/assets/highlight/highlight.min.js"></script>
 	<script>hljs.highlightAll();</script>
 	""")
 
+html(n) = """
+	$(read(n.files[:html], String))
+	<div id="floating-header">
+		$(headercontent(n))
+	</div>
+	<style>
+	#floating-header {
+	position: fixed;
+		top: 0;
+		left: 0;
+		# width: 100vw;
+		height: var(--header-size);
+		padding: 5px;
+		border-radius: 0 0 5pt 0;
+		background: white;
+		box-shadow: 0 0 5pt #0005;
+		z-index: 10000;
+	}
+	</style>
+	"""
 
 toc(tree) = base("""
 	<div id="content" class="pad">
-	Welcome to my Zettelkasten garden of notes.
+	<h1>Joseph’s notes</h1>
 	<p>
-	This site contains loosely organised scraps and notes from research and coursework.
+	Welcome to my Zettelkasten garden of notes.
+	Here is where I put scraps and notes from my research and coursework.
 	</p>
 
 	$(toc_item(tree))
@@ -76,10 +102,11 @@ toc(tree) = base("""
 	"""; title = "Home")
 
 notelink(name, info) = """
-	<a class="notelink" href="$ROOT/$name">[$name]</a> <span style="font-size: 80%">($(info.kind))</span>
+	<a class="notelink" href="$ROOT/$name">[$name]</a>
+	<span style="font-size: 80%">$(replace(string(info.kind), "_"=>" "))</span>
 """
 
-toc_item((name, info)::Pair{String,<:NamedTuple}) = """
+toc_item((name, info)::Pair{String}) = """
 	<li>$(notelink(name, info))</li>
 """
 

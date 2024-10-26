@@ -12,6 +12,7 @@ function watch()
 		try
 			build()
 		catch error
+			@error error
 		end
 		LAST_TIME[] = time()
 		println("Watching...")
