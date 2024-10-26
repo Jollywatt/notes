@@ -51,12 +51,16 @@ object[type="application/pdf"] {
 }
 
 ul {
-	list-style-type: "– ";
+	list-style-type: "∙ ";
 	padding-inline-start: 20pt;
 }
 
 #content > ul {
 	padding-inline-start: 0;
+}
+
+li:has(ul) {
+	margin: 5pt 0;
 }
 
 .notelink {

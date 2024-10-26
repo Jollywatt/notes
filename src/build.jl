@@ -116,6 +116,7 @@ function tohere(srcfile::String)
 	dest
 end
 
+
 template(::Val{:typst_pdf}, n) = Templates.pdf(n)
 template(::Val{:latex_pdf}, n) = Templates.pdf(n)
 template(::Val{:pluto_notebook}, n) = Templates.html(n)
@@ -123,66 +124,18 @@ template(::Val{:julia_code}, n) = Templates.code(n, read(n.files[:jl], String), 
 template(::Val, n) = @warn "Skipping note" n
 
 function rendernote(note::NamedTuple)
+	# copy files into site directory
 	for (ext, file) in note.files
 		ext == :html && continue
 		note.files[ext] = tohere(file)
 	end
 
-
 	open("$(note.name).html", "w") do f
 		html = template(Val(note.kind), note)
 		write(f, html)
 	end
-	# rendernote(Val(note.kind); note.name, note.dir, note.files)
 end
 
-# function rendernote(::Val{:typst_pdf}; name, dir, files)
-# 	tohere(files[:typ])
-# 	pdf = tohere(files[:pdf])
-# 	open("$name.html", "w") do f
-# 		html = Templates.pdf(
-# 			title=name,
-# 			file=pdf,
-# 			meta=note
-# 		)
-# 		write(f, html)
-# 	end
-# end
-
-# function rendernote(::Val{:julia_code}; name, dir, files)
-# 	file = tohere(note.file)
-# 	open("$name.html", "w") do f
-# 		html = Templates.julia(
-# 			title=name,
-# 			code=read(note.file, String),
-# 			meta=note
-# 		)
-# 		write(f, html)
-# 	end
-# end
-
-# function rendernote(::Val{:html}, name, note)
-# 	# tohere(note.file)
-# 	open("$name.html", "w") do f
-# 		# html = read(note.file, String)
-# 		html = Templates.html(
-# 			title=name,
-# 			file=note.file,
-# 			meta=note,
-# 		)
-# 		write(f, html)
-# 		# write(f, """
-# 		# <span id="floating-banner-note">HELLO</span>
-# 		# <style>
-# 		# #floating-banner-note {
-# 		# 	position: fixed;
-# 		# 	top: 0;
-# 		# 	left: 0;
-# 		# }
-# 		# </style>
-# 		# """)
-# 	end
-# end
 
 function exportpermalinks(notes)
 	open("typst-template/permalinks.csv", "w") do file
@@ -207,7 +160,6 @@ function build(srcdir="../notes", targetdir="../site")
 	cd(targetdir) do
 		# index page
 		tree = reduce(vcat, last.(totree(notes)))
-		# tree = totree(notes)
 		open("index.html", "w") do f
 			write(f, Templates.toc(tree))
 		end
