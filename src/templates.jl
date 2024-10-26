@@ -75,14 +75,13 @@ html(n) = """
 	</div>
 	<style>
 	#floating-header {
-	position: fixed;
+		position: fixed;
 		top: 0;
 		left: 0;
-		# width: 100vw;
 		height: var(--header-size);
 		padding: 5px;
 		border-radius: 0 0 5pt 0;
-		background: white;
+		background: light-dark(white, #0004);
 		box-shadow: 0 0 5pt #0005;
 		z-index: 10000;
 	}
