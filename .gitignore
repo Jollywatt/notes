@@ -2,3 +2,4 @@
 site/
 *.sublime-project
 *.sublime-workspace
+Manifest.toml
