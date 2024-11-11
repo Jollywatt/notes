@@ -68,6 +68,33 @@ code(n, text, lang) = note("""
 	<script>hljs.highlightAll();</script>
 	""")
 
+desmos(n, link) = base("""
+	<div id="wide-header">
+		$(headercontent(n))
+	</div>
+	<iframe class="page" src=$(repr(link))></iframe>
+	<style>
+	iframe {
+		border: none;
+		display: block;
+		height: calc(100vh - 30px);
+		width: 100vw;
+	}
+	#wide-header {
+		height: 20px;
+		padding: 5px;
+		border-radius: 0 0 5pt 0;
+		color: white !important;
+		background: #2A2A2A;
+		box-shadow: 0 0 5pt #0005;
+		z-index: 10000;
+	}
+	#wide-header a {
+		color: white
+	}
+	</style>
+"""; title=n.name)
+
 html(n, htmlcontent) = """
 	$htmlcontent
 	<div id="floating-header">
