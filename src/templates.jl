@@ -55,7 +55,7 @@ note(content, n; args...) = base("""
 	"""; title=n.name, args...)
 
 pdf(n) = note("""
-	<object data="$ROOT/$(n.files[:pdf])" type="application/pdf"/>
+	<object data="$ROOT/$(n.name).pdf" type="application/pdf"/>
 	""", n)
 
 code(n, text, lang) = note("""
@@ -68,8 +68,8 @@ code(n, text, lang) = note("""
 	<script>hljs.highlightAll();</script>
 	""")
 
-html(n) = """
-	$(read(n.files[:html], String))
+html(n, htmlcontent) = """
+	$htmlcontent
 	<div id="floating-header">
 		$(headercontent(n))
 	</div>
@@ -89,7 +89,7 @@ html(n) = """
 	"""
 
 toc(tree) = base("""
-	<div id="content" class="pad">
+	<div id="toc" class="pad">
 	<h1>Joseph’s notes</h1>
 	<p>
 	Welcome to my Zettelkasten garden of notes.
