@@ -9,20 +9,26 @@
 = Product of Gaussian probability density functions
 
 #block(width: 100%, stroke: green, fill: green.lighten(95%), radius: 5pt, inset: 1em)[
-Product of two Gaussian pdfs:
+The product of two Gaussian PDFs is an unnormalised Gaussian:
 $
-	normal(mean_1, cov_1)normal(mean_2, cov_2) = 
+	normal(mean_1, cov_1)normal(mean_2, cov_2) prop 
 	normal((cov_1 + cov_2)^(-1)(cov_1 mean_2 + cov_2 mean_1), (cov_1^(-1) + cov_2^(-1))^(-1))
 $
 // $
 // 	product_(i=1)^N normal(mean_i, cov_i) =
 // 	normal((sum_(i=1)^N cov_i^(-1))^(-1) (sum_(i=1)^N cov_i^(-1) mean_i), (sum_(i=1)^N cov_i^(-1))^(-1))
 // $
-Product of many Gaussian pdfs:
+For many Gaussians:
 $
-	normal(mean_1, cov_1)normal(mean_2, cov_2) dots.c normal(mean_N, cov_N) &=
+	normal(mean_1, cov_1)normal(mean_2, cov_2) dots.c normal(mean_N, cov_N) &prop
 	normal(cov (cov_1^(-1) mean_1 + dots.c + cov_N^(-1) mean_N), cov) \
 	"where" cov &= (cov_1^(-1) + dots.c + cov_N^(-1))^(-1)
+$
+In other words, precisions are summed and means weighted by precisions are summed.
+$
+	cov^(-1) = cov_1^(-1) + cov_2^(-1)
+	quad "and" quad
+	cov^(-1) mean = cov_1^(-1) mean_1 + cov_2^(-1) mean_2.
 $
 ]
 
