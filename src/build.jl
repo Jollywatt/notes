@@ -18,7 +18,7 @@ function notekind(byext::Dict{Symbol,String})
 		Set([:tex, :pdf]) => :latex_pdf,
 		Set([:jl, :html]) => :pluto_notebook,
 		Set([:jl]) => :julia_code,
-		Set([:desmos]) => :desmos_link,
+		Set([:url]) => :iframe_link,
 	)
 
 	if keys(byext) in keys(combos)
@@ -103,9 +103,13 @@ template(::Val{:typst_pdf}, n) = Templates.pdf(n)
 template(::Val{:latex_pdf}, n) = Templates.pdf(n)
 template(::Val{:pluto_notebook}, n) = Templates.html(n, read(joinpath(n.srcdir, n.files[:html]), String))
 template(::Val{:julia_code}, n) = Templates.code(n, read(joinpath(n.srcdir, n.files[:jl]), String), :julia)
-template(::Val{:desmos_link}, n) = Templates.desmos(n, read(joinpath(n.srcdir, n.files[:desmos]), String))
+function template(::Val{:iframe_link}, n)
+	content = read(joinpath(n.srcdir, n.files[:url]), String)
+	m = match(r"^URL=(.*)$"m, content)
+	isnothing(m) && @error "Invalid `.url` file format, see https://fileinfo.com/extension/url" m
+	Templates.iframe(n, m[1])
+end
 template(::Val, n) = @warn "Skipping note" n
-template(::Val{:desmos_link}, n) = Templates.desmos(n, read(joinpath(n.srcdir, n.files[:desmos]), String))
 
 
 function exportpermalinks(notes, path=joinpath(dirname(@__FILE__), "typst-template/permalinks.csv"))

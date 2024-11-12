@@ -4,7 +4,7 @@ using HTTP
 using FileWatching
 
 function serve(; serverroot="./site", clientroot="/notes", port=8000)
-
+	println("http://127.0.0.1:$port$clientroot")
 	HTTP.listen("127.0.0.1", port) do http::HTTP.Stream
 
 		path = http.message.target

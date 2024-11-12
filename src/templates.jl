@@ -68,7 +68,7 @@ code(n, text, lang) = note("""
 	<script>hljs.highlightAll();</script>
 	""")
 
-desmos(n, link) = base("""
+iframe(n, link) = base("""
 	<div id="wide-header">
 		$(headercontent(n))
 	</div>
