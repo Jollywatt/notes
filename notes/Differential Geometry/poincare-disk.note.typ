@@ -5,6 +5,6 @@
 
 Define a metric on the open unit disk ${(x, y) | x^2 + y^2 < 1}$ by
 $
-dif s^2 = 4(dif x^2 + dif y^2)/(1 + dif x^2 + dif y^2)^2.
+dif s^2 = (4 dif r^2)/(1 + r^2)^2 = 4 (dif x^2 + dif y^2)/(1 - x^2 - y^2)^2
 $
 The upper half 

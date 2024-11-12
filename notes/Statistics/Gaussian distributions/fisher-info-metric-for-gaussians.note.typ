@@ -36,3 +36,5 @@ $
 g = (dif mu^2 + 2 dif sigma^2)/sigma^2
 $
 so that $g(arrow(u), arrow(v)) = arrow(u)^T (nabla^2 K) arrow(v)$ for any vectors $arrow(u), arrow(v) in RR^2$.
+
+Under a change of coordinates $mu = sqrt(2) x, sigma = y$, the metric $g$ is (twice) the metric of the @poincare-half-plane[Poincaré half-plane] model of hyperbolic space.
