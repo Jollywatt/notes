@@ -12,13 +12,12 @@ Infer the type or kind of a note by which file extensions are present.
 For example, a pair of `*.tex` and `*.pdf` files with the same name form a LaTeX note.
 """
 function notekind(byext::Dict{Symbol,String})
-
 	combos = Dict(
 		Set([:typ, :pdf]) => :typst_pdf,
 		Set([:tex, :pdf]) => :latex_pdf,
 		Set([:jl, :html]) => :pluto_notebook,
 		Set([:jl]) => :julia_code,
-		Set([:url]) => :iframe_link,
+		Set([:url]) => :url,
 	)
 
 	if keys(byext) in keys(combos)
@@ -27,6 +26,25 @@ function notekind(byext::Dict{Symbol,String})
 		@error "Can't recognise multi-file note" byext
 	end
 
+end
+
+noteinfo(::Val, n) = nothing
+function noteinfo(::Val{:url}, n)
+	content = read(joinpath(n.srcdir, n.files[:url]), String)
+	m = match(r"^URL=(.*)$"m, content)
+	isnothing(m) && @error "Invalid `.url` file format, see https://fileinfo.com/extension/url" m
+	url = m[1]
+	sites = [
+		"www.desmos.com" => "Desmos plot"
+	]
+	i = findfirst(sites) do (k, v)
+		contains(url, k)
+	end
+	site = isnothing(i) ? "Permalink" : last(sites[i])
+	(
+		url=url,
+		site=site,
+	)
 end
 
 """
@@ -61,7 +79,9 @@ function findnotes(srcdir)
 
 	isempty(notes) && @warn "Could not find any notes" srcdir pwd()
 
-	Dict(k => (kind = notekind(v.files), v...) for (k, v) in notes)
+	Dict(k => let kind = notekind(v.files)
+		(kind, v..., info=noteinfo(Val(kind), v))
+	end for (k, v) in notes)
 end
 
 
@@ -103,12 +123,7 @@ template(::Val{:typst_pdf}, n) = Templates.pdf(n)
 template(::Val{:latex_pdf}, n) = Templates.pdf(n)
 template(::Val{:pluto_notebook}, n) = Templates.html(n, read(joinpath(n.srcdir, n.files[:html]), String))
 template(::Val{:julia_code}, n) = Templates.code(n, read(joinpath(n.srcdir, n.files[:jl]), String), :julia)
-function template(::Val{:iframe_link}, n)
-	content = read(joinpath(n.srcdir, n.files[:url]), String)
-	m = match(r"^URL=(.*)$"m, content)
-	isnothing(m) && @error "Invalid `.url` file format, see https://fileinfo.com/extension/url" m
-	Templates.iframe(n, m[1])
-end
+template(::Val{:url}, n) = Templates.iframe(n, n.info)
 template(::Val, n) = @warn "Skipping note" n
 
 
