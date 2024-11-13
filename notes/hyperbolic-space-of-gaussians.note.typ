@@ -70,8 +70,6 @@ This relationship can be seen with the following steps:
 			content(( 45deg, 0.5), num(4))
 			circle((0,0), radius: 3pt, fill: eastern, stroke: none)
 
-			line((0,0), (2,0), mark: (end: ">"))
-
 			content((2.5,0), $|->$)
 
 			translate(x: 4)
@@ -83,8 +81,8 @@ This relationship can be seen with the following steps:
 			}).join()
 			circle((0,0), radius: 3pt, fill: eastern, stroke: none)
 		}))
-		See @poincare-plane-to-disk for a more detailed visualisation of this mapping.
-		Its Jacobian is
+		See @poincare-plane-to-disk[this Desmos plot] for a more detailed visualisation of this mapping.
+		The Jacobian is:
 		$
 		dif z |-> (-2 dif z)/(z + i)^2
 		$
