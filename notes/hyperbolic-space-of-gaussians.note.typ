@@ -5,8 +5,10 @@
 #let normal(mean, cov) = $cal(N)(mean, cov)$
 #let metric(a, b) = $lr(angle.l #a, #b angle.r)$
 
+#set math.vec(delim: "[")
+
 #let labeq(eqn, lab) ={
-	set math.equation(numbering: "(1)")
+	set math.equation(numbering: i => [(#i)], supplement: none)
 	[#eqn #lab]
 }
 
@@ -41,51 +43,38 @@ This relationship can be seen with the following steps:
 	where $g (arrow(u), arrow(v)) = metric(arrow(u), arrow(v))$.
 
 +
-	@metric is related to the metric of the @poincare-half-plane[Poincaré half-plane] ${(x,y) | y > 0}$ with $mu = sqrt(2) x, sigma = y$:
-	$
-	(dif mu^2 + 2 dif sigma^2)/sigma^2 = 2 ((dif x^2 + dif y^2)/y^2)
-	$
+	The space of univariate Gaussian distributions equipped with the metric @metric scaled by half, $g slash 2$, is isometric to hyperbolic 2-space.
+	In particular, it is isometric to one sheet of the unit hyperboloid embedded in $RR^3$ with the metric $"diag"(+1, +1, -1)$.
 
-+
-	The Poincaré half-plane can be isometrically mapped to the Poincaré unit disk and then to the upper sheet of a hyperboloid.
+	The isometry is most easily expressed by factoring it into a sequence of isometries between various spaces.
+	The table below shows how to move from $(lambda, theta)$ coordinates parametrising the upper sheet of the unit hyperboloid $z^2 = x^2 + y^2 + 1$ to $(mu, sigma)$ coordinates.
 
-	+
-		The mapping from the half plane to the unit disk is given by
-		$
-		z |-> i ((z - i)/(z + i))
-		quad <==> quad
-		vec(x, y) |-> 1/(x^2 + (y + 1)^2) vec(2x, x^2 + y^2 - 1)
-		$
-		where $z = x + i y$.
-		#import "@preview/cetz:0.3.1"
-		#align(center, cetz.canvas({
-			let num(i) = numbering("I", i)
-			import cetz.draw: *
-			arc((1,0), radius: 1, start: 0deg, stop: 180deg)
-			line((-2,0), (+2,0))
-			line((0,0), (0,+2))
-			content(( 45deg, 1.4), num(1))
-			content((135deg, 1.4), num(2))
-			content((135deg, 0.5), num(3))
-			content(( 45deg, 0.5), num(4))
-			circle((0,0), radius: 3pt, fill: eastern, stroke: none)
+	#table(
+		columns: (auto, auto, 1fr),
+		align: (center + horizon, center + horizon, left),
+		inset: 10pt,
+		..([System], [Metric], [Description]).map(strong),
+		$ vec(lambda, theta) $,
+		$ dif lambda^2 + sinh^2 lambda dif theta^2 $,
+		[Surface of hyperboloid with rapidity $lambda$],
+		$ vec(x, y, z) = vec(cos theta sinh lambda, sin theta sinh lambda, cosh lambda) $,
+		$ dif x^2 + dif y^2 - dif z^2 $,
+		[Cartesian hyperbolic 3-space],
+		$ vec(rho, theta, z) = vec(sinh lambda, theta, cosh lambda) $,
+		$ dif rho^2 + rho^2 dif theta^2 - dif z^2 $,
+		[Cylindrical hyperbolic 3-space],
+		$ vec(r, theta) = vec(rho/(z + 1), theta) $,
+		$ 4(dif r^2 + r^2 dif theta^2)/(1 - r^2)^2 $,
+		[Polar coordinates on hyperbolic unit disk],
+		$ zeta = r e^(i theta) $,
+		$ (4 dif zeta dif zeta^*)/(1 - zeta zeta^*)^2 $,
+		[Poincaré disk],
+		$ xi = 1/i ((zeta + i)/(zeta - i)) $,
+		$ (dif xi dif xi^*)/Im(xi)^2 $,
+		[Poincaré half-plane],
+		$ vec(mu, sigma) = vec(sqrt(2) Re(xi), Im(xi)) $,
+		$ (dif mu^2 + 2 dif sigma^2)/(2sigma^2) $,
+		[Parameter space of univariate Gaussians with the associated @fisher-info-metric-for-gaussians[Fisher Information metric] multiplied by $1/2$],
+	)
 
-			content((2.5,0), $|->$)
-
-			translate(x: 4)
-			circle((0,0), radius: 1)
-			line((-1,0), (+1,0))
-			line((0,-1), (0,+1))
-			range(4).map(i => {
-				content((i*90deg + 45deg, 0.6), num(i + 1))
-			}).join()
-			circle((0,0), radius: 3pt, fill: eastern, stroke: none)
-		}))
-		See @poincare-plane-to-disk[this Desmos plot] for a more detailed visualisation of this mapping.
-		The Jacobian is:
-		$
-		dif z |-> (-2 dif z)/(z + i)^2
-		$
-
-	+
-		The mapping from the unit disk to the upper hyperboloid is given by
+	See @hyperbolic-isometries for numerical verifications of the relationships above.
