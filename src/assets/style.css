@@ -20,8 +20,8 @@ html:has(#toc) {
 	color: wheat;
 }
 
-html:has(#toc) a:any-link { color: #F5DEB3; }
-html:has(#toc) a:visited { color: #B084CD; }
+html:has(#toc) a:any-link { color: #978EBF; }
+html:has(#toc) a:visited { color: #715B9A; }
 html:has(#toc) a:active { color: white; }
 html:has(#toc) a:hover { color: white; }
 
@@ -72,6 +72,7 @@ body {
 #toc {
 	max-width: 800px;
 	margin: auto;
+	padding-bottom: 60px;
 }
 
 .pad {

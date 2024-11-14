@@ -23,7 +23,7 @@ base(content; title, head="") = """
 	"""
 
 headercontent(n) = """
-	<a href="$ROOT">Joseph’s notes</a> / $(n.name)
+	<a href="$ROOT">Joseph’s notes</a> / <span style="font-family: monospace; font-size: initial;">$(n.name)</span>
 	$(
 		if :pdf in keys(n.files)
 			link(n.name, :pdf, "raw PDF")
