@@ -200,5 +200,3 @@ $ c_0 = (-1)^n det(A), quad c_(n-1) = -tr(A), quad c_n = 1 $
 	edge(<both>, "n->", <k>, [iterate], center)
 
 )
-
-#notes.references()

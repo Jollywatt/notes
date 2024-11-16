@@ -83,5 +83,3 @@ Furthermore, for homogeneous multivectors of a given grade, the minimum number o
 		Minimum number of steps required to invert a $d$-dimensional $k$-vector (for any non-degenerate metric).
 	],
 ) <patterns>
-
-#notes.references()

@@ -1,8 +1,11 @@
-#let references() = bibliography(
-	"library.bib",
-	title: [References],
-	style: "american-psychological-association",
-)
+#let references() = [
+	= References
+	#bibliography(
+		"library.bib",
+		title: none,
+		style: "american-psychological-association",
+	)
+]
 
 #let get-permalinks() = {
 	let links = (:)
@@ -19,13 +22,14 @@
 	link(url, highlight(fill: c, label))
 }
 
-#let style(body) = {
+#let style(body, bibliography: auto) = {
 	set page(width: 18cm, height: auto, margin: 12mm)
 
 	show heading: pad.with(y: 0.5em)
 
 	let s = underline.with(stroke: eastern + 0.06em)
 	show link: s
+	show ref: s
 	show ref: it => {
 		let name = str(it.target)
 		let note-refs = get-permalinks()
@@ -36,10 +40,23 @@
 				it.supplement
 			}
 			note-crossref(label, note-refs.at(name))
-		} else { it }
+		} else {
+			if it.element == none {
+				// probably a bibliography entry
+				counter("bib-entries").update(1)
+			}
+			it
+		}
 	}
 
 	body
+
+	if bibliography == true { references() }
+	else if bibliography == auto {
+		context if counter("bib-entries").get().at(0) > 0 {
+			references()
+		}
+	}
 }
 
 #let result-box(body, tint: green) = {

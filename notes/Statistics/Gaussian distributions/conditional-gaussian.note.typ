@@ -4,7 +4,7 @@
 #let normal(mean, cov) = $cal(N)(mean, cov)$
 
 #let mean = $bold(mu)$
-#let cov = $bold(Sigma)$
+#let cov = $Sigma$
 #let val = $bold(x)$
 
 #set math.vec(delim: "[")
@@ -74,5 +74,3 @@ $
 cov &= cov_1 - R cov_2 R^T \
 mean &= mean_1 + R cov_2^(-1) (val_2 - mean_2) \
 $
-
-#notes.references()
