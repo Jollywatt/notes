@@ -5,10 +5,9 @@
 
 = This is a test note
 
-#lorem(30)
 
 Here is an #link("https://github.com/Jollywatt/typst-fletcher")[external link].
-
 Here is a link to another note: @flv-algorithm.
+You can also have @test[supplements] on note links, and can cite literature such as @wilson2022.
 
-You can also have @test[supplements] on note links.
+#text(font: "Comic Neue", lorem(50))
