@@ -123,7 +123,7 @@ template(::Val{:typst_pdf}, n) = Templates.pdf(n)
 template(::Val{:latex_pdf}, n) = Templates.pdf(n)
 template(::Val{:pluto_notebook}, n) = Templates.html(n, read(joinpath(n.srcdir, n.files[:html]), String))
 template(::Val{:julia_code}, n) = Templates.code(n, read(joinpath(n.srcdir, n.files[:jl]), String), :julia)
-template(::Val{:url}, n) = Templates.iframe(n, n.info)
+template(::Val{:url}, n) = Templates.iframe(n, n.info.url)
 template(::Val, n) = @warn "Skipping note" n
 
 
@@ -180,7 +180,6 @@ function build(srcdir="notes/", targetdir="site/")
 	end
 	nothing
 end
-
 
 if !isinteractive()
 	build()
