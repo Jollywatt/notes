@@ -25,6 +25,9 @@
 #let style(body, bibliography: auto) = {
 	set page(width: 18cm, height: auto, margin: 12mm)
 
+	set text(font: "CMU Concrete")
+	show math.equation: set text(font: "Concrete Math")
+
 	show heading: pad.with(y: 0.5em)
 
 	let s = underline.with(stroke: eastern + 0.06em)
