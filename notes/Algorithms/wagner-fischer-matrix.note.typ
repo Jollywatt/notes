@@ -26,46 +26,119 @@
 	let steps = ()
 	while i + j > 0 {
 		if false {
-		} else if matrix.at(i - 1).at(j) < matrix.at(i).at(j) {
-			i -= 1
-			steps.push((type: "delete", i: i, j: j))
-
 		} else if matrix.at(i).at(j - 1) < matrix.at(i).at(j) {
 			j -= 1
-			steps.push((type: "insert", i: i, j: j))
+			steps.push((op: "insert", i: i, j: j))
+
+		} else if matrix.at(i - 1).at(j) < matrix.at(i).at(j) {
+			i -= 1
+			steps.push((op: "delete", i: i, j: j))
 
 		} else {
 			let zero-cost = matrix.at(i - 1).at(j - 1) == matrix.at(i).at(j)
 			i -= 1
 			j -= 1
 			if zero-cost {
-				steps.push((type: "identity", i: i, j: j))
+				steps.push((op: "identity", i: i, j: j))
 			} else {
-				steps.push((type: "swap", i: i, j: j))
+				steps.push((op: "swap", i: i, j: j))
 			}
 		}
 	}
 	return steps.rev()
 }
 
+#let colors = (
+	insert: green,
+	delete: red,
+	swap: orange,
+	identity: gray,
+)
 
-#let wagner-fischer-table(a, b) = {
+#let wagner-fischer-table(s, t) = {
+	let a = s.clusters()
+	let b = t.clusters()
+	a.push($diameter$)
+	b.push($diameter$)
 	let d = wagner-fischer-matrix(a, b)
-	let path = find-path(d).map(step => (step.i, step.j))
+	let path = find-path(d)
+	let coords = path.map(step => (step.i, step.j))
+	let size = 1.6em
+
+	rect(["#s" #sym.arrow "#t"])
+	
 	table(
-		columns: b.len() + 1,
+		columns: (size,)*(b.len() + 1),
+		rows: size,
+		align: center + bottom,
 		fill: (x, y) => {
-			if x*y == 0 { teal }
-			else if (y - 1, x - 1) in path { yellow }
-			else { none }
+			if x*y == 0 { return teal }
+			let i = coords.position(c => c == (y - 1, x - 1))
+			if i != none {
+				colors.at(path.at(i).op)
+			}
 		},
-		none, ..b.clusters(),
-		..a.clusters().zip(d).map(((letter, row)) => (letter, ..row))
-			.flatten().map(i => [#i])
+		none, ..b,
+		..a.zip(d)
+			.map(((letter, row)) => (letter, ..row))
+			.flatten().map(i => [#i]),
 	)
+
+	let steps = path.map(((op, i, j)) => {
+		let t = if op == "insert" {
+			sym.plus + b.at(j)
+		} else if op == "swap" {
+			a.at(i) + "/" + b.at(j)
+		} else if op == "delete" {
+			sym.minus + a.at(i)
+		} else {
+			a.at(i)
+		}
+		text(colors.at(op), t)
+	}).join[, ]
+
+	rect(steps)
 }
 
+#wagner-fischer-table("Mondays", "Wednesday")
 
-#wagner-fischer-table("abc ", "axcde ")
 
-#find-path(wagner-fischer-matrix("abc ", "aX "))
+First form a matrix $A$ whose rows correspond to letters in the source $S$ string (length $m$) and columns to letters in the $T$ target (length $n$).
+
+Initialise an $m times n$ matrix as
+$
+A = mat(
+	0, 1, dots, n;
+	1, 0, dots, 0;
+	dots.v, dots.v, dots.down, dots.v;
+	m, 0, dots, 0;
+)
+$
+and apply the rule
+$
+A_(i, j) &= min{
+		A_((i - 1),j) + 1,
+		A_(i,(j - 1)) + 1,
+		A_((i - 1),(j - 1)) + s
+	} \
+s &= cases(0 "if" S_i = T_j, 1 "otherwise")
+$
+in order of increasing $i, j > 1$.
+
+Then, form a path through the entries of $A$, starting from the $(m + 1, n + 1)$ position (bottom right), moving one step to the neighboring cell of minimum value until the $(1, 1)$ position (top left) is reached.
+
+Left steps $arrow.l$ correspond to #text(green)[insertions], and upward steps $arrow.t$ correspond to #text(red)[deletions].
+Diagonal steps $arrow.tl$ correspond to accepting the current character when the cell values are equal, or #text(orange)[substituting] characters otherwise.
+
+Finally, moving along this path in the $arrow.br$ direction, you can read off the character operations which map the source string to the target.
+
+== More examples!
+
+Generated with the above algorithm in @wagner-fischer-matrix[this document]'s Typst source code.
+
+
+#wagner-fischer-table("For Wednesday", "From Monday")
+\
+#wagner-fischer-table("Typst", "Typeset")
+\
+#wagner-fischer-table("ABC@YZ", "AB@XYZ")
