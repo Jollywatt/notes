@@ -25,6 +25,8 @@ html:has(#toc) a:visited { color: #715B9A; }
 html:has(#toc) a:active { color: white; }
 html:has(#toc) a:hover { color: white; }
 
+h1 a { color: inherit !important; }
+
 #background {
 	position: fixed;
 	top: 0;
