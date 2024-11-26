@@ -9,6 +9,9 @@
 	block(stroke: luma(80%), inset: 0.5em, it)
 )
 
+
+/* program analysis */
+
 #let get-dependents(program) = program.pairs().map( ((var, obj)) => {
 	let deps = program.pairs()
 		.filter( ((var2, (_, df))) => var in df.keys())
@@ -16,13 +19,24 @@
 	(var, deps)
 }).to-dict()
 
-#let get-inputs(program) = program.pairs().filter( ((k, (fn, _))) => fn == none ).map(o => o.first())
-#let get-outputs(program) = get-dependents(program).pairs().filter( ((k, v)) => v.len() == 0 ).map(o => o.first())
+#let get-inputs(program) = for (k, (fn, _)) in program {
+	if fn == none { (k,) }
+}
+#let get-outputs(program) = for (k, deps) in get-dependents(program) {
+	if deps == () { (k,) }
+}
+#let get-body(program) = {
+	program.pairs().filter( ((var, (fn, _))) => fn != none)
+}
 
-#let joinlines(lines) = program-box($ #lines.join($\ $) $)
+#let show-steps(lines) = program-box($ #lines.join($\ $) $)
 
-#let get-steps(program) = {
-	program.pairs().map( ((var, (fn, _))) => {
+#let get-steps(program, inputs: true) = {
+	let steps = program.pairs()
+	if not inputs {
+		steps = steps.filter( ((var, (fn, _))) => fn != none)
+	}
+	steps.map( ((var, (fn, _))) => {
 		$var &:= fmtnone(fn)$
 	})
 }
@@ -38,7 +52,7 @@
 }
 
 
-#let inline-program(program) = {
+#let show-inline-program(program) = {
 	let inputs = get-inputs(program).join($, $)
 	let outputs = get-outputs(program)
 	let substitute(it) = program.keys().fold(it, (acc, var) => {
@@ -57,29 +71,29 @@
 	$
 }
 
-#let show-forward-mode(program) = {
-	show: program-box
-	show: math.equation.with(block: true)
+#let get-forward(program) = {
 	program.pairs().map(((name, (_, dfn))) => {
 		let rhs = dfn.pairs()
 			.map(((var, der)) => $der dif var$)
 			.join($op(+)$)
 		$dif name &:= fmtnone(rhs)$
-	}).join($\ $)
+	})
 }
 
-#let show-reverse-mode(program) = {
-	show: program-box
-	show: math.equation.with(block: true)
-	let deps = get-dependents(program)
-	program.pairs().rev().map(((name, o)) => {
+#let get-reverse(program, inputs: true) = {
+	let deps = get-dependents(program) 
+	let steps = program.pairs().rev().map(((name, o)) => {
 		let rhs = deps.at(name).map(var => {
 			let (_, dfn) = program.at(var)
 			dfn.at(name)
 			$op(diff var)$
 		}).join($op(+)$)
-		$diff name &:= fmtnone(rhs)$
-	}).join($\ $)
+		(name, rhs)
+	})
+	if not inputs {
+		steps = steps.filter( ((var, rhs)) => rhs != none)
+	}
+	steps.map(((var, rhs)) => $diff var &:= fmtnone(rhs)$)
 }
 
 #let acronym(short, long) = context {
@@ -89,7 +103,7 @@
 	c.update(1)
 }
 
-#let SSA = acronym[SSA][Single Simple Assignment]
+#let SSA = acronym[SSA][Static Single Assignment]
 
 = Forward and Reverse Mode Automatic Differentiation
 
@@ -99,10 +113,10 @@
 	a: ($x y$, (x: $y$, y: $x$)),
 	b: ($sin x$, (x: $cos x$)),
 	f: ($a + b$, (a: $$, b: $$)),
-	// g: ($sqrt(b)$, (b: $1/(2sqrt(b))$))
+	// g: ($a sqrt(b)$, (a: $sqrt(b)$, b: $a/(2sqrt(b))$))
 )
 
-Suppose you have simple program #inline-program(program) which you wish to differentiate.
+Suppose you have simple program #show-inline-program(program) which you wish to differentiate.
 
 First, transform the expression into #SSA form, where each step is a single atomic operation whose derivative is known.
 
@@ -117,11 +131,12 @@ We write $alpha = terminal$ to indicate that $alpha$ is a free input, and $alpha
 
 The forward mode derivative program is formed simply by finding the differential of each step.
 
-#show-forward-mode(program)
+#show-steps(get-forward(program))
 
-For any given $dif x$ and $dif y$, we can directly compute $dif z$.
-For example, if $(dif x, dif y) = (1, 0)$, then $dif z$ evaluates to $diff z slash diff x$.
-To find $diff z slash diff y$, we need to evaluate the forward pass again, with $(dif x, dif y) = (0, 1)$.
+#let lastvar = program.keys().last()
+For any given $dif x$ and $dif y$, we can directly compute $dif lastvar$.
+For example, if $(dif x, dif y) = (1, 0)$, then $dif lastvar$ evaluates to $diff lastvar slash diff x$.
+To find $diff lastvar slash diff y$, we need to evaluate the forward pass again, with $(dif x, dif y) = (0, 1)$.
 
 Forward mode requires *one evaluation* of the program *per input* variable.
 
@@ -138,17 +153,17 @@ Forward mode requires *one evaluation* of the program *per input* variable.
 			$name &:= fn$,
 			$dif name &:= fmtnone(rhs)$,
 		)
-	}).join()
+	}).join().join($\ $)
 	let inputs = get-inputs(program)
 	let outputs = get-outputs(program)
-	inputs = $(#inputs.join($, $) semi #inputs.map(var => $dif var$).join($, $))$
-	outputs = $(#outputs.join($, $) semi #outputs.map(var => $dif var$).join($, $))$
+	let args = $(#inputs.join($, $) semi #inputs.map(var => $dif var$).join($, $))$
+	let returns = $(#outputs.join($, $) semi #outputs.map(var => $dif var$).join($, $))$
 	show: program-box
 	set align(left)
 	block[
-		#`function` #inputs `{` \
-			$ #lines.join($\ $) $
-		`}` $-> outputs$
+		$"function" args space {$
+			#pad(left: 2em, $ lines $)
+		$} -> returns$
 	]
 }
 
@@ -156,49 +171,149 @@ In practice, functions can be evaluated in forward mode efficiently by simply in
 #show-forward-program(program)
 This function computes both #get-outputs(program).map(var => $var$).join[, ] and the differential #get-outputs(program).map(var => $dif var$).join[, ] in one pass.
 
+=== Forward mode functor
+
+#let forward(..args) = $cal(F){#args.pos().join($, $)}$
+
+The essence of forward mode differentiation is the functor
+$
+forward(f)(x_1, ..., x_n, dif x_1, ..., dif x_n) = (f(x), (diff f(x_1))/(diff x_1) dif x_1 + dots.c + (diff f(x_n))/(diff x_n) dif x_n)
+$
+which maps any function $f$ to another function $forward(f)$ which returns both the value $f(x)$ and the derivative $dif f$ given input variables $x_i$ and input differentials $dif x_i$.
+
+This function has a simple composition law
+$
+forward(g compose f) = forward(g) compose forward(f)
+$
+which makes it easy to find the derivative of larger programs.
+
+#let func(inputs, outputs, steps, prefix: none) = {
+	show: block.with(inset: .3em)
+	align(left)[
+		$prefix (#inputs.join($, $)) |-> {$ \
+		#pad(left: 2em, $ #steps.join($\ $) $)
+		$} -> (#outputs.join($, $))$
+	]
+}
+
+
+
+$
+forward(func(
+	#get-inputs(program),
+	#get-outputs(program),
+	#get-steps(program, inputs: false),
+)) = func(
+	#(get-inputs(program) + get-inputs(program).map(var => $dif var$)),
+	#(get-outputs(program) + get-outputs(program).map(var => $dif var$)),
+	#get-body(program).map( ((var, (fn, dfn))) => {
+		$
+		(var, dif var) &:=
+		forward(fn)(#dfn.keys().join($, $), #dfn.keys().map(var => $dif var$).join($, $)) = 
+		(fn, #dfn.pairs().map( ((var, der)) => $ der dif var $).join($+$))
+		$
+	}),
+)
+$
+
+
 == Reverse mode
 
-The reverse mode is slightly more confusing: from the #SSA form, starting from bottom to top, find the _derivative operator_ $dwrt(alpha)$ of each variable $alpha ~~> beta_1, ..., beta_k$  using the chain rule to write it in terms of the affected variables:
+The reverse mode is slightly more confusing: from the #SSA form, starting from bottom to top, find the _derivative operator_ $dwrt(alpha)$ for each variable $alpha ~~> beta_1, ..., beta_k$  using the chain rule to write it in terms of the variables it affects:
 $
 dwrt(alpha) = (diff beta_1)/(diff alpha) dwrt(beta_1) + dots.c + (diff beta_k)/(diff alpha) dwrt(beta_2)
 $
 Then, write $diff alpha$ in place of $dwrt(alpha)$, and view it as a real variable instead of an operator.
 
-#show-reverse-mode(program)
+#show-steps(get-reverse(program))
 
-Then, to find $dwrt(x) z(x, y)$, we assign $diff z = 1$ and substitute from top to bottom to obtain $diff x$ and $diff y$.
+Then, to find $dwrt(x) lastvar(x, y)$, we assign $diff lastvar = 1$ and substitute from top to bottom to obtain $diff x$ and $diff y$.
 
-We set $diff z = 1$ because, when viewed as an operator applied to the function in question, $dwrt(z) z(x, y) = 1$.
-The final values $diff x$ are then interpreted as $dwrt(x) z(x, y)$.
+We set $diff lastvar = 1$ because, when viewed as an operator applied to the function in question, $dwrt(lastvar) lastvar(x, y) = 1$.
+The final value of $diff x$ is then $dwrt(x) lastvar(x, y)$.
 
 Reverse mode requires *one evaluation* of the program *per output* variable.
 
 === Implementing reverse mode
 
+We can write the reverse mode derivative program by including both the normal steps and the derivative steps.
+This time, the steps can't be interleaved because the derivative steps run in reverse, so we put the derivative steps afterwards:
 
 #let show-reverse-program(program) = {
-	let steps = get-steps(program)
+	let inputs = get-inputs(program)
+	let outputs = get-outputs(program)
+	let args = $(#inputs.join($, $) semi #outputs.map(var => $diff var$).join($, $))$
+	let returns = $(#outputs.join($, $) semi #inputs.map(var => $diff var$).join($, $))$
+	let lines = {
+		get-steps(program, inputs: false)
+		get-reverse(program, inputs: false)
+	}.join($\ $)
 	show: program-box
-	let lines = program.pairs().map( ((var, (fn, dfn))) => {
-		let deps = dfn.keys()
-		if fn == none { return }
-		$var, cal(B)_var &= cal(J)(fn; #deps.join($, $))$
-	}).filter(x => x != none).join($\ $)
-	$ lines $
-
-	line()
-
-	let deps = get-dependents(program)
-	let out = program.pairs().rev().map( ((var, (fn, dfn))) => {
-		if program.at(var).at(0) == none { return }
-		let lhs = dfn.keys().map(var => $overline(var)$).join($, $)
-		let rhs = $cal(B)_var \(overline(var)\)$
-		$lhs := rhs$
-	}).filter(x => x != none).join($\ $)
-	$ out $
+	set align(left)
+	block[
+		$"function" args space {$
+			#pad(left: 2em, $ lines $)
+		$} -> returns$
+	]
 }
 
 #show-reverse-program(program)
+
+Running this function with $diff lastvar = 1$ yields both $diff x$ and $diff y$ in one pass.
+
+
+= Graphics
+
+#let get-next-layer(program, vars) = {
+	program.pairs().filter( ((var, (_, dfn))) => {
+		vars.any(var => var in dfn)	
+	}).to-dict().keys()
+}
+
+#let get-layers(program) = {
+	let inputs = get-inputs(program)
+	let layer = inputs
+	let layers = ()
+	while layer.len() > 0 {
+		layers.push(layer)
+		layer = get-next-layer(program, layer)
+	}
+	layers
+}
+
+#import "@preview/fletcher:0.5.2": diagram, node, edge
+
+#let layers = get-layers(program)
+
+#let flow-diagram(program, inputs, outputs) = {
+	diagram(
+		// node-fill: luma(90%),
+		// node-outset: 5pt,
+		spacing: (20pt, 50pt),
+		for (l, layer) in layers.enumerate() {
+			for (v, var) in layer.enumerate() {
+				let (fn, dfn) = program.at(var)
+				let lhs = if inputs.at(var) != none { $inputs.at(var) = $ }
+				node((l, v - layer.len()/2), $ lhs outputs.at(var) $, name: var)
+				for var2 in dfn.keys() {
+					edge(label(var2), "-|>", label(var))
+				}
+			}
+		}
+	)
+}
+
+#flow-diagram(
+	program,
+	program.pairs().map( ((var, (fn, dfn))) => (var, fn)).to-dict(),
+	program.pairs().map( ((var, (fn, dfn))) => (var, var)).to-dict(),
+)
+
+#flow-diagram(
+	program,
+	program.pairs().map( ((var, (fn, dfn))) => (var, if fn != none { forward(fn) })).to-dict(),
+	program.pairs().map( ((var, (fn, dfn))) => (var, $(var, dif var)$)).to-dict(),
+)
 
 
 
