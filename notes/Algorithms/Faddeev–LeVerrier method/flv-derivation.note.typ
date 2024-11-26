@@ -1,6 +1,6 @@
 #import "@local/notes:0.1.0"
 #import "@preview/lovelace:0.3.0"
-#import "@preview/fletcher:0.5.1" as fletcher: node, edge
+#import "@preview/fletcher:0.5.2" as fletcher: node, edge
 
 #show: notes.style
 
@@ -35,7 +35,7 @@ The algorithm terminates in $n$ steps, where each step involves a single matrix 
 It works like magic!
 
 
-#lovelace.pseudocode-list(title: smallcaps[Faddeev-LeVerrier algorithm], hooks: .5em)[
+#lovelace.pseudocode-list(title: emph[Faddeev-LeVerrier algorithm], hooks: .5em)[
 + *given* an $n times n$ matrix $A$
 + $c_n := 1$
 + $N <- bb(0)$
@@ -59,10 +59,10 @@ $ chi(lambda) = det (lambda II - A) = sum_(k=0)^n c_k lambda^k $
 
 
 #fact[
-	The _adjunct_ of a matrix, $adj(X)$, satisfies $det(X) II = A adj(X)$.
+	The _adjunct_ of a matrix, $adj(A)$, satisfies $det(A) II = A adj(A)$.
 
-	If $A$ is $n times n$, then $det(X)$, and hence the entries of $X adj(X)$, are degree $n$ polynomials in the entries of $A$.
-	Hence, the entries of $adj(X)$ are degree $n - 1$ polynomials.
+	If $A$ is $n times n$, then $det(A)$, and hence the entries of $A adj(A)$, are degree $n$ polynomials in the entries of $A$.
+	Hence, the entries of $adj(A)$ are degree $n - 1$ polynomials.
 ]
 
 The entries of $N(lambda) := adj(lambda II - A)$ are $lambda$-polynomals of order $n - 1$, so $N(lambda) = sum_(k=0)^(n-1) N_k lambda^k$ where $N_k$ are matrices.
@@ -120,7 +120,7 @@ cal(L){e^(A t)}
 	= (s II - A)^(-1) \
 $
 #caution[
-	I'm uncomfortable with these indefinite integrals. Why should $lim_(t -> oo) e^((A - s II)t)$ converge?
+	I'm uncomfortable with these integrals. Why should $lim_(t -> oo) e^((A - s II)t)$ converge?
 ]
 Note that from $chi(lambda) = det(lambda II - A) = (lambda II - A) N(lambda)$ we have
 #tag($ (lambda II - A)^(-1) = N(lambda)/chi(lambda) $) <N-chi>
@@ -150,10 +150,10 @@ which, expanding and equating powers of $lambda$,
 $ c_k = tr(A N_k)/(k - n) $
 for all $0 <= k <= n$ where we define $N_n = 0$.
 
-== Final algorithm
 
 
 #fact[
+The characteristic polynomial coefficients give the determinant, trace, and inverse of the matrix according to:
 $
 chi(lambda)
 	&=& c_0 &+ dots.c +& c_(n-1) &lambda^(n-1) &+ c_n &lambda^n \
@@ -170,7 +170,6 @@ $ c_0 = (-1)^n det(A), quad c_(n-1) = -tr(A), quad c_n = 1 $
 
 #fletcher.diagram(
 	node-shape: rect,
-	// node-stroke: 1pt,
 	axes: (ttb, ltr),
 	node((0,0), $ det(lambda II - A) = sum_(k=0)^n c_k lambda^k $),
 	edge("->", <det-adj>),
@@ -190,8 +189,6 @@ $ c_0 = (-1)^n det(A), quad c_(n-1) = -tr(A), quad c_n = 1 $
 	edge("->", bend: 0deg),
 	node((0,1.3), $ c_k = tr(A N_k)/(k - n) $, name: <N_k>),
 
-	// edge(<N_k>, "->", auto),
-	// edge(<c_k>, "->", auto),
 	node((1,1), $ c_0, ..., c_n \ N_0, ..., N_(n-1) $, name: <k>),
 	edge("->"),
 	node((2,1), $ A^(-1) = -N_0 slash c_0 $, stroke: green, outset: 5pt),
