@@ -5,9 +5,21 @@
 #let terminal = $star$
 #let fmtnone(x) = if x == none { terminal } else { x }
 
+#let forward(..args) = $cal(F){#args.pos().join($, $)}$
+#let reverse(..args) = $cal(R){#args.pos().join($, $)}$
+
+#let dirder(fn, val) = $DD fn [val]$
+
 #let program-box(it) = align(center,
 	block(stroke: luma(80%), inset: 0.5em, it)
 )
+
+#let braceblock(head: none, ..args, tail: none) = {
+	$head \{$
+	pad(left: 2em, y: -.25em, args.pos().join[\ ])
+	$\} tail$
+}
+
 
 
 /* program analysis */
@@ -153,18 +165,18 @@ Forward mode requires *one evaluation* of the program *per input* variable.
 			$name &:= fn$,
 			$dif name &:= fmtnone(rhs)$,
 		)
-	}).join().join($\ $)
+	}).join()
 	let inputs = get-inputs(program)
 	let outputs = get-outputs(program)
 	let args = $(#inputs.join($, $) semi #inputs.map(var => $dif var$).join($, $))$
 	let returns = $(#outputs.join($, $) semi #outputs.map(var => $dif var$).join($, $))$
 	show: program-box
 	set align(left)
-	block[
-		$"function" args space {$
-			#pad(left: 2em, $ lines $)
-		$} -> returns$
-	]
+	braceblock(
+		head: $"function" args space$,
+		..lines,
+		tail: $-> returns$
+	)
 }
 
 In practice, functions can be evaluated in forward mode efficiently by simply interweaving the normal program statements with their differentials.
@@ -173,17 +185,22 @@ This function computes both #get-outputs(program).map(var => $var$).join[, ] and
 
 === Forward mode functor
 
-#let forward(..args) = $cal(F){#args.pos().join($, $)}$
 
 The essence of forward mode differentiation is the functor
 $
-forward(f)(x_1, ..., x_n, dif x_1, ..., dif x_n) = (f(x), (diff f(x_1))/(diff x_1) dif x_1 + dots.c + (diff f(x_n))/(diff x_n) dif x_n)
+forward(f)(x, dif x) = (f(x), dirder(f, x)(dif x))
 $
-which maps any function $f$ to another function $forward(f)$ which returns both the value $f(x)$ and the derivative $dif f$ given input variables $x_i$ and input differentials $dif x_i$.
+where $dirder(f, x)(dif x)$ is the directional derivative of $f$ at $x$ in the $dif x$ direction, or
+$
+dirder(f, x)(dif x) := lim_(epsilon -> 0) (f(x + epsilon dif x) - f(x))/epsilon
+$
+where we assume the domain of $f$ is a vector space.
 
-This function has a simple composition law
+This functor has a simple composition law
 $
-forward(g compose f) = forward(g) compose forward(f)
+forward(g compose f) &= forward(g) compose forward(f) \
+forward(g compose f)(x, dif x)
+	&= (g(f(x)), dirder(g, f(x))(dirder(f, x)(dif x)))
 $
 which makes it easy to find the derivative of larger programs.
 
@@ -237,32 +254,50 @@ Reverse mode requires *one evaluation* of the program *per output* variable.
 === Implementing reverse mode
 
 We can write the reverse mode derivative program by including both the normal steps and the derivative steps.
-This time, the steps can't be interleaved because the derivative steps run in reverse, so we put the derivative steps afterwards:
+However, this time the steps can't all be run at once because the derivative steps run in reverse order, so must be run after all the normal steps.
+Therefore, we put the derivative steps in a callback function $JJ$ so they can be run later, after the current function and any following functions have been run.
 
 #let show-reverse-program(program) = {
 	let inputs = get-inputs(program)
 	let outputs = get-outputs(program)
-	let args = $(#inputs.join($, $) semi #outputs.map(var => $diff var$).join($, $))$
+	let args = $(#inputs.join($, $))$
 	let returns = $(#outputs.join($, $) semi #inputs.map(var => $diff var$).join($, $))$
-	let lines = {
-		get-steps(program, inputs: false)
-		get-reverse(program, inputs: false)
-	}.join($\ $)
 	show: program-box
 	set align(left)
-	block[
-		$"function" args space {$
-			#pad(left: 2em, $ lines $)
-		$} -> returns$
-	]
+	braceblock(
+		head: $"function" args space $,
+		..get-steps(program, inputs: false),
+		braceblock(
+			head: $JJ &:= (#outputs.map(var => $diff var$).join($, $)) |-> $,
+			..get-reverse(program, inputs: false),
+			tail: $-> (#inputs.map(var => $diff var$).join($, $))$,
+		),
+		tail: $-> (#outputs.join($, $), JJ)$
+	)
 }
 
 #show-reverse-program(program)
 
-Running this function with $diff lastvar = 1$ yields both $diff x$ and $diff y$ in one pass.
+
+=== Reverse mode functor
+
+The essence of reverse mode differentiation is the functor
+$ reverse(f)(x) = (f(x), dirder(f, x)^*) $
+where $diff f |-> dirder(f, x)^*(diff f)$ is the adjoint operator of $dif x |-> dirder(f, x)(dif x)$, satisfying
+
+#let ip(left, right) = $lr(angle.l left, right angle.r)$
+$
+ip(dirder(f, x)^*(diff f), dif x) = ip(diff f, dirder(f, x)(dif x))
+$
+for some inner product $ip(quad, quad)$.
+
+This functor has the composition law
+$
+reverse(g compose f)(x) = (g(f(x)), dirder(f, x)^* compose dirder(g, f(x))^*)
+$
 
 
-= Graphics
+= Graphs
 
 #let get-next-layer(program, vars) = {
 	program.pairs().filter( ((var, (_, dfn))) => {
@@ -286,6 +321,7 @@ Running this function with $diff lastvar = 1$ yields both $diff x$ and $diff y$ 
 #let layers = get-layers(program)
 
 #let flow-diagram(program, inputs, outputs) = {
+	set align(center)
 	diagram(
 		// node-fill: luma(90%),
 		// node-outset: 5pt,
@@ -303,17 +339,22 @@ Running this function with $diff lastvar = 1$ yields both $diff x$ and $diff y$ 
 	)
 }
 
+Program flow can be visualised like this:
 #flow-diagram(
 	program,
 	program.pairs().map( ((var, (fn, dfn))) => (var, fn)).to-dict(),
 	program.pairs().map( ((var, (fn, dfn))) => (var, var)).to-dict(),
 )
 
+The forward mode program has the same flow:
+
 #flow-diagram(
 	program,
 	program.pairs().map( ((var, (fn, dfn))) => (var, if fn != none { forward(fn) })).to-dict(),
 	program.pairs().map( ((var, (fn, dfn))) => (var, $(var, dif var)$)).to-dict(),
 )
+
+The reverse mode program, however, propagates derivatives backwards, as if all the arrows are reversed.
 
 
 
