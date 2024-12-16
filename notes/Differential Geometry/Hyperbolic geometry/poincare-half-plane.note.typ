@@ -18,13 +18,17 @@ delta z |-> J delta z
 quad "where" quad J := (a d - b c)/(c z + d)^2
 $
 where $delta z$ is a tangent vector at $z$.
-We can show that the metric is satisfied by this class of transformation by showing that
+By showing that
 $
 g(u, v)|_z = g(J u, J v)|_psi(z)
 $
+we prove that the metric is preserved by this family of transformations.
 
+See @hyperbolic-isometries for numerical proofs.
 
-For example, an upward ray transforms as:
+== Example transformations
+
+An upward ray transforms as:
 $
 i e^t |-> (a i e^t + b)/(c i e^t + d)
 $
