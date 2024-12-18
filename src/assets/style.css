@@ -1,5 +1,9 @@
 @import url('https://fonts.cdnfonts.com/css/linux-libertine-o');
 
+:root {
+	color-scheme: light dark;
+}
+
 html {
 	--header-size: 20px;
 	--pdf-background: #808080;
@@ -16,14 +20,14 @@ html:has(.scroll) {
 }
 
 html:has(#toc) {
-	background: #14141D;
-	color: wheat;
+	background: light-dark(wheat, #14141D);
+	color: light-dark(#14141D, wheat);
 }
 
 html:has(#toc) a:any-link { color: #978EBF; }
 html:has(#toc) a:visited { color: #715B9A; }
-html:has(#toc) a:active { color: white; }
-html:has(#toc) a:hover { color: white; }
+html:has(#toc) a:active { color: light-dark(black, white); }
+html:has(#toc) a:hover { color: light-dark(black, white); }
 
 h1 a { color: inherit !important; }
 
@@ -33,15 +37,23 @@ h1 a { color: inherit !important; }
 	left: 50%;
 	transform: translateX(-50%);
 	width: calc(300px + 70vw);
-	mix-blend-mode: screen;
-	filter: invert();
-	opacity: 0.1;
+	opacity: 0.15;
 	z-index: -1000;
-	mask-image: -webkit-gradient(
-		linear, right top, left bottom, 
-		from(rgba(0,0,0,1)), to(rgba(0,0,0,0))
-	);
+	mask-image: linear-gradient(270deg, rgba(0,0,0,1), rgba(0,0,0,0));
 }
+
+@media (prefers-color-scheme: light) {
+	#background {
+		mix-blend-mode: multiply;
+	}
+}
+@media (prefers-color-scheme: dark) {
+	#background {
+		mix-blend-mode: screen;
+		filter: invert();
+	}
+}
+
 
 #background ~ h1 {
 	padding-top: 80px;
