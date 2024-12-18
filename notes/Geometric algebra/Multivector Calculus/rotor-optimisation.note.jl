@@ -7,10 +7,17 @@ using InteractiveUtils
 # ╔═╡ 74e7ff02-97a0-11ef-1599-2d165c71af12
 begin
 	using Pkg
-	Pkg.develop(path="/Users/josephwilson/Documents/GeometricAlgebra.jl/")
-	Pkg.add("Plots")
-	using GeometricAlgebra, Plots, Test
+	Pkg.develop(url="https://github.com/jollywatt/geometricalgebra.jl")
+	Pkg.add(["Plots", "Mooncake"])
+	using GeometricAlgebra
+	using Mooncake
+	using Plots, Test
 end
+
+# ╔═╡ 3a4beb90-7ef4-435c-a760-e814fda50b2f
+md"""
+This notebook shows a simple application of gradient descent to optimise a rotor with respect to a scalar-valued loss function.
+"""
 
 # ╔═╡ d95c6473-32cc-4760-b0ec-05daeebd6ea7
 md"""
@@ -79,6 +86,45 @@ let ϵ = 1e-7
 	end
 end
 
+# ╔═╡ eefcce8b-0e71-40b4-b3c6-bd0f92073197
+md"""
+### Gradient of the loss function
+
+Given the directional derivative `δloss(R, δR)`, we can obtain the gradient `∇loss(R)` as
+```math
+\nabla {\cal L}(R) = \sum_{I} e_I \, \delta {\cal L}(R, e_I)
+```
+where ``\{e_I\} = \{1, e_{23}, e_{31}, e_{12}\}`` are basis blades spanning the rotor supspace. 
+"""
+
+# ╔═╡ 34e17266-44f5-4997-9757-0af42f6ab02e
+∇loss_manual(R) = let M = Multivector{3,0:2:2}
+	δR = M.([i .== 1:4 for i in 1:4])
+	M(δloss.(R, δR))
+end
+
+# ╔═╡ 15a32897-26fa-40f5-a58e-efb171819b19
+md"""
+### Automatically differentiating the loss function
+
+We can use [Mooncake.jl](https://compintell.github.io/Mooncake.jl/) to compute the gradient directly using reverse mode automatic differentation.
+"""
+
+# ╔═╡ b8a51f0c-4d45-484c-b1e9-09467637089f
+rule = build_rrule(loss, R_star)
+
+# ╔═╡ 5a4168f4-1df4-4111-8937-706ec5f35479
+∇loss_auto(R) = let (value, grad) = value_and_gradient!!(rule, loss, R)
+	typeof(R)(grad[2].fields.comps.fields.data.tangent)
+end
+
+# ╔═╡ 723f08d2-c522-4883-93d5-35097347bb95
+# check that hand-written and autodiff gradients agree
+for _ in 1:100
+	R = typeof(R_star)(randn(ncomponents(R_star)))
+	@test ∇loss_auto(R) ≈ ∇loss_manual(R)
+end
+
 # ╔═╡ 3757144f-7f3c-4481-b1bf-edfc08a1ebee
 md"""
 
@@ -91,25 +137,19 @@ Knowing the directional derivative of ``{\cal L}(R)``, we can form the gradient 
 which is the even multivector which maximises ``\frac{\mathrm{d}}{\mathrm{d}\varepsilon} {\cal L}\left(R + \varepsilon\,\partial {\cal L}(R)\right)``.
 """
 
-# ╔═╡ 34e17266-44f5-4997-9757-0af42f6ab02e
-∂loss(R) = let M = Multivector{3,0:2:2}
-	δR = M.([i .== 1:4 for i in 1:4])
-	M(δloss.(R, δR))
-end
-
 # ╔═╡ 18d5e36a-bf96-4bdc-a5c0-bb1822ec693a
-function train(R; stepsize=0.05, iterations=20)
+function train(R; stepsize=0.08, iterations=50)
 	losses = Float64[]
 	for i in 1:iterations
 		push!(losses, loss(R))
-		δR = -stepsize*∂loss(R)
+		δR = -stepsize*∇loss_auto(R)
 		R += δR
 	end
 	(final_rotor=R, final_loss=last(losses), losses)
 end
 
 # ╔═╡ 32c8d7a7-a164-43b8-beed-123201a54f2d
-R = exp(Multivector{3,2}(randn(3)))
+R = exp(10*Multivector{3,2}(randn(3))) # random initial guess
 
 # ╔═╡ 7ceb6e16-f47e-4440-bdb9-11d280932904
 results = train(R)
@@ -121,9 +161,11 @@ log(results.final_loss)
 begin
 	plot(results.losses, label="training loss", yaxis=:log10)
 	xlabel!("steps")
+	ylims!(1e-6, 1e1)
 end
 
 # ╔═╡ Cell order:
+# ╟─3a4beb90-7ef4-435c-a760-e814fda50b2f
 # ╠═74e7ff02-97a0-11ef-1599-2d165c71af12
 # ╟─d95c6473-32cc-4760-b0ec-05daeebd6ea7
 # ╠═fbc13ba8-bf9c-4105-854d-8583f379bf67
@@ -135,8 +177,13 @@ end
 # ╠═1368a403-7f26-494d-8c9d-48de60e1f4ef
 # ╠═7c359b61-05c2-4e12-b225-6a5d87247c9f
 # ╠═ad961c0a-0ff8-4ea8-8109-d7165c635cae
-# ╟─3757144f-7f3c-4481-b1bf-edfc08a1ebee
+# ╟─eefcce8b-0e71-40b4-b3c6-bd0f92073197
 # ╠═34e17266-44f5-4997-9757-0af42f6ab02e
+# ╟─15a32897-26fa-40f5-a58e-efb171819b19
+# ╠═b8a51f0c-4d45-484c-b1e9-09467637089f
+# ╠═5a4168f4-1df4-4111-8937-706ec5f35479
+# ╠═723f08d2-c522-4883-93d5-35097347bb95
+# ╟─3757144f-7f3c-4481-b1bf-edfc08a1ebee
 # ╠═18d5e36a-bf96-4bdc-a5c0-bb1822ec693a
 # ╠═32c8d7a7-a164-43b8-beed-123201a54f2d
 # ╠═7ceb6e16-f47e-4440-bdb9-11d280932904
