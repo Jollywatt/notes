@@ -21,7 +21,7 @@ template(::Val{kind}, n) where kind = error("No template function defined for no
 
 permalink(url) = "$SITE$ROOT/"*url
 
-link(url, label) = "• <a href=$(repr(url))>$label</a>"
+link(url, label) = "<a href=$(repr(url))>$label</a>"
 
 copyright_url() = "https://creativecommons.org/licenses/by-nc-nd/4.0/"
 
@@ -45,28 +45,53 @@ base(content; title, head="") = """
 	</html>
 	"""
 
-headercontent(n) = """
-	<a href="$ROOT">Joseph’s notes</a> / <span style="font-family: monospace; font-size: initial;">$(n.name)</span>
-	$(
-		if :pdf in keys(n.files)
-			link("$(n.name).pdf", "raw PDF")
-		else
-			""
-		end
-	)
-	$(
-		if :typ in keys(n.files)
-			link("$(n.name).typ", "typst source")
-		elseif :tex in keys(n.files)
-			link("$(n.name).tex", "LaTeX source")
-		elseif :jl in keys(n.files)
-			link("$(n.name).jl", "Julia source")
-		else
-			""
-		end
-	)
-	$(link(copyright_url(), "©"))
-"""
+function headercontent(n)
+	items = String[
+		link(ROOT, "Joseph’s notes"),
+	]
+	push!(items, """ / <span style="font-family: monospace; font-size: initial;">$(n.name)</span>""")
+	:pdf in keys(n.files) && push!(items, link("$(n.name).pdf", "raw PDF"))
+	:typ in keys(n.files) && push!(items, link("$(n.name).typ", "typst source"))
+	:tex in keys(n.files) && push!(items, link("$(n.name).tex", "LaTeX source"))
+	:jl in keys(n.files) && push!(items, link("$(n.name).jl", "Julia source"))
+	join(items, " • ")
+end
+
+
+function crossref_tabs(note)
+
+
+	arrivals = map(note.crossrefs.arrivals) do name
+		"""<div class="notelink">$(link(joinpath(ROOT, name), name))</div>"""
+	end
+	departures = map(note.crossrefs.departures) do name
+		"""<div class="notelink">$(link(joinpath(ROOT, name), name))</div>"""
+	end
+
+	items = String[]
+
+	isempty(arrivals) || push!(items, """
+		<div class="zettel-side-menu left">
+			<div>
+				<div>Arriving links:</div>
+				$(join(arrivals))
+				<span class="tab right">⟩</span>
+			</div>
+		</div>
+	""")
+
+	isempty(departures) || push!(items, """
+		<div class="zettel-side-menu right">
+			<div>
+				<div>Departing links:</div>
+				$(join(departures))
+				<span class="tab left">⟩</span>
+			</div>
+		</div>
+	""")
+
+	join(items)
+end
 
 
 note(content, n; args...) = base("""
@@ -76,10 +101,11 @@ note(content, n; args...) = base("""
 	<div id="content">
 		$content
 	</div>
+	$(crossref_tabs(n))
 	"""; title=n.name, args...)
 
 pdf(n) = note("""
-	<object data="$ROOT/$(n.name).pdf" type="application/pdf"/>
+	<object data="$ROOT/$(n.name).pdf" type="application/pdf"></object>
 	""", n)
 
 code(n, text, lang) = note("""
