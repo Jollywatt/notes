@@ -2,8 +2,9 @@ module ZettelkastenNotes
 
 include("templates.jl")
 include("compiletypst.jl")
+include("analysis.jl")
 
-export build
+export build, findnotes
 
 
 """
@@ -20,7 +21,6 @@ function notekind(byext::Dict{Symbol,String})
 	end
 
 end
-
 
 
 noteinfo(::Val, n) = nothing
@@ -139,6 +139,9 @@ function build(srcdir="notes/", targetdir="site/")
 
 	notes = findnotes(srcdir)
 	exportpermalinks(notes)
+
+	graph = linkgraph(notes)
+	notes = addlinks(graph, notes)
 
 	# index page
 	open(joinpath(targetdir, "index.html"), "w") do f
