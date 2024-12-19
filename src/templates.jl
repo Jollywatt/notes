@@ -1,7 +1,23 @@
 module Templates
 
-SITE = "https://jollywatt.github.io"
-ROOT = "/notes"
+const SITE = "https://jollywatt.github.io"
+const ROOT = "/notes"
+
+const combos = Dict(
+	Set([:typ, :pdf]) => :typst_pdf,
+	Set([:tex, :pdf]) => :latex_pdf,
+	Set([:jl, :html]) => :pluto_notebook,
+	Set([:jl]) => :julia_code,
+	Set([:url]) => :url,
+)
+
+template(::Val{:typst_pdf}, n) = Templates.pdf(n)
+template(::Val{:latex_pdf}, n) = Templates.pdf(n)
+template(::Val{:pluto_notebook}, n) = Templates.html(n, read(joinpath(n.srcdir, n.files[:html]), String))
+template(::Val{:julia_code}, n) = Templates.code(n, read(joinpath(n.srcdir, n.files[:jl]), String), :julia)
+template(::Val{:url}, n) = Templates.iframe(n, n.info.url)
+template(::Val{kind}, n) where kind = error("No template function defined for note kind $(repr(kind))!")
+
 
 permalink(url) = "$SITE$ROOT/"*url
 

@@ -1,10 +1,9 @@
-#!/usr/bin/env julia
+module ZettelkastenNotes
 
-if !isdefined(Main, :Revise)
-	const includet = include
-end
+include("templates.jl")
+include("compiletypst.jl")
 
-includet("templates.jl")
+export build
 
 
 """
@@ -12,21 +11,17 @@ Infer the type or kind of a note by which file extensions are present.
 For example, a pair of `*.tex` and `*.pdf` files with the same name form a LaTeX note.
 """
 function notekind(byext::Dict{Symbol,String})
-	combos = Dict(
-		Set([:typ, :pdf]) => :typst_pdf,
-		Set([:tex, :pdf]) => :latex_pdf,
-		Set([:jl, :html]) => :pluto_notebook,
-		Set([:jl]) => :julia_code,
-		Set([:url]) => :url,
-	)
+	Templates.combos
 
-	if keys(byext) in keys(combos)
-		combos[keys(byext)]
+	if keys(byext) in keys(Templates.combos)
+		Templates.combos[keys(byext)]
 	else
 		@error "Can't recognise multi-file note" byext
 	end
 
 end
+
+
 
 noteinfo(::Val, n) = nothing
 function noteinfo(::Val{:url}, n)
@@ -87,6 +82,7 @@ end
 
 function totree(notes::Dict{String})
 	paths = [(name => info) => info.categories for (name, info) in notes]
+	flattenned = sort!(paths, by=last)
 	totree(paths)
 end
 
@@ -118,13 +114,6 @@ function totree(nodes::AbstractVector{<:Pair})
 	tree.second
 end
 
-
-template(::Val{:typst_pdf}, n) = Templates.pdf(n)
-template(::Val{:latex_pdf}, n) = Templates.pdf(n)
-template(::Val{:pluto_notebook}, n) = Templates.html(n, read(joinpath(n.srcdir, n.files[:html]), String))
-template(::Val{:julia_code}, n) = Templates.code(n, read(joinpath(n.srcdir, n.files[:jl]), String), :julia)
-template(::Val{:url}, n) = Templates.iframe(n, n.info.url)
-template(::Val, n) = @warn "Skipping note" n
 
 
 function exportpermalinks(notes, path=joinpath(dirname(@__FILE__), "typst-template/permalinks.csv"))
@@ -164,7 +153,7 @@ function build(srcdir="notes/", targetdir="site/")
 
 		# create HTML page for note
 		open(joinpath(targetdir, "$name.html"), "w") do f
-			html = template(Val(note.kind), note)
+			html = Templates.template(Val(note.kind), note)
 			write(f, html)
 		end
 
@@ -181,6 +170,4 @@ function build(srcdir="notes/", targetdir="site/")
 	nothing
 end
 
-if !isinteractive()
-	build()
 end
