@@ -1,6 +1,11 @@
 #import "@local/notes:0.1.0"
 #show: notes.style
 
+#let eqnum(it) = {
+	set math.equation(numbering: "(1)")
+	it
+}
+
 = The Dirichlet distribution
 
 The multinomial distribution answers the question:
@@ -18,10 +23,10 @@ The Dirichlet distribution asks the opposite question:
 	What is the probability that a particular categorical distribution is responsible for a given set of counts?
 ]
 The answer is:
-$
+#eqnum[$
 "Dirichlet"(bold(beta) | bold(alpha))
 	= Gamma(sum_i alpha_i)/(product_i Gamma(alpha_i)) product_i beta_i^(alpha_i - 1)
-$ <dirichlet>
+$ <dirichlet>]
 Note that these equations are equal with $alpha_i = c_i + 1$. The difference between the distributions is in the interpretation, and in that $alpha_i$ is not assumed to be integral.
 
 == Mean
@@ -33,10 +38,10 @@ EE{beta_i}
 	&= integral_Delta beta_i "Dirichlet"(bold(beta) | bold(alpha)) dif bold(beta)
 $
 The integral $integral_Delta$ is taken over the simplex $sum_i beta_i = 1$. Substituting @dirichlet yeilds
-$
+#eqnum[$
 EE{beta_i}
 	&= Gamma(sum_j alpha_j)/(product_j Gamma(alpha_j)) integral_Delta beta_i product_(j != i) beta_j^(alpha_j - 1) dif bold(beta)
-$ <step>
+$ <step>]
 where the integrand is now proportional to @dirichlet, but with one of the shape factors offset as $alpha_i |-> alpha_i + 1$ due to the extra $beta_i$.
 We can circumnavigate this integral by noting that the Dirichlet distribution is normalised to establish
 $
