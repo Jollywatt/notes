@@ -87,8 +87,7 @@ end
 
 function totree(notes::Dict{String})
 	paths = [(name => info) => info.categories for (name, info) in notes]
-	flattenned = sort!(paths, by=last)
-	totree(flattenned)
+	totree(paths)
 end
 
 function totree(nodes::AbstractVector{<:Pair})
@@ -103,6 +102,7 @@ function totree(nodes::AbstractVector{<:Pair})
 		end
 
 		while length(stack) > i
+			sort!(stack[end].second, by=((name, v),) -> (v isa Vector, name))
 			pop!(stack)
 		end
 
