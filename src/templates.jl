@@ -47,9 +47,12 @@ base(content; title, head="") = """
 	"""
 
 function headercontent(n)
-	items = ["""
-		$(link(ROOT, "Joseph’s notes")) / <span class="notelink">$(n.name)</span>
-	"""]
+	titles = join([
+		link(ROOT, "Joseph’s notes")
+		n.categories
+		"""<span class="notelink">$(n.name)</span>"""
+	], " / ")
+	items = [titles]
 	:pdf in keys(n.files) && push!(items, link("$(n.name).pdf", "raw PDF"))
 	:typ in keys(n.files) && push!(items, link("$(n.name).typ", "typst source"))
 	:tex in keys(n.files) && push!(items, link("$(n.name).tex", "LaTeX source"))
