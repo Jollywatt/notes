@@ -36,6 +36,7 @@ base(content; title, head="") = """
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link rel="stylesheet" href="$ROOT/assets/style.css">
+		<link rel="stylesheet" href="$ROOT/assets/widgets.css">
 		$head
 		<title>Joseph's notes | $title</title>
 	</head>
@@ -46,10 +47,9 @@ base(content; title, head="") = """
 	"""
 
 function headercontent(n)
-	items = String[
-		link(ROOT, "Joseph’s notes"),
-	]
-	push!(items, """ / <span style="font-family: monospace; font-size: initial;">$(n.name)</span>""")
+	items = ["""
+		$(link(ROOT, "Joseph’s notes")) / <span class="notelink">$(n.name)</span>
+	"""]
 	:pdf in keys(n.files) && push!(items, link("$(n.name).pdf", "raw PDF"))
 	:typ in keys(n.files) && push!(items, link("$(n.name).typ", "typst source"))
 	:tex in keys(n.files) && push!(items, link("$(n.name).tex", "LaTeX source"))
@@ -62,18 +62,20 @@ function crossref_tabs(note)
 
 
 	arrivals = map(note.crossrefs.arrivals) do name
-		"""<div class="notelink">$(link(joinpath(ROOT, name), name))</div>"""
+		"""<li class="notelink">$(link(joinpath(ROOT, name), name))</li>"""
 	end
 	departures = map(note.crossrefs.departures) do name
-		"""<div class="notelink">$(link(joinpath(ROOT, name), name))</div>"""
+		"""<li class="notelink">$(link(joinpath(ROOT, name), name))</li>"""
 	end
 
-	items = String[]
+	items = String[
+		"""<link rel="stylesheet" href="$ROOT/assets/widgets.css">"""
+	]
 
 	isempty(arrivals) || push!(items, """
 		<div class="zettel-side-menu left">
 			<div>
-				<div>Arriving links:</div>
+				<li>Linking to here:</li>
 				$(join(arrivals))
 				<span class="tab right">⟩</span>
 			</div>
@@ -83,7 +85,7 @@ function crossref_tabs(note)
 	isempty(departures) || push!(items, """
 		<div class="zettel-side-menu right">
 			<div>
-				<div>Departing links:</div>
+				<li>Linked from here:</li>
 				$(join(departures))
 				<span class="tab left">⟩</span>
 			</div>
@@ -147,22 +149,11 @@ iframe(n, link) = base("""
 
 html(n, htmlcontent) = """
 	$htmlcontent
-	<div id="floating-header">
+	<link rel="stylesheet" href="$ROOT/assets/widgets.css">
+	<div class="zettel-floating-header">
 		$(headercontent(n))
 	</div>
-	<style>
-	#floating-header {
-		position: fixed;
-		top: 0;
-		left: 0;
-		height: var(--header-size);
-		padding: 5px;
-		border-radius: 0 0 5pt 0;
-		background: light-dark(white, #0004);
-		box-shadow: 0 0 5pt #0005;
-		z-index: 10000;
-	}
-	</style>
+	$(crossref_tabs(n))
 	"""
 
 toc(tree) = base("""

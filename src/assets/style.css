@@ -5,7 +5,7 @@
 }
 
 html {
-	--header-size: 20px;
+	--header-size: 30px;
 	--pdf-background: #808080;
 	background: var(--pdf-background);
 	font-family: 'Linux Libertine O', sans-serif;
@@ -70,7 +70,10 @@ body {
 
 #header {
 	height: var(--header-size);
-	padding-left: 5px;
+	padding-left: 12px;
+	display: flex;
+	align-items: center;
+	gap: 5px;
 }
 
 #content {
@@ -119,43 +122,3 @@ ul {
 li:has(ul) {
 	margin: 5pt 0;
 }
-
-.notelink {
-	font-family: monospace;
-}
-
-
-.zettel-side-menu {
-	position: fixed;
-	background: #0005;
-	top: 50%;
-	border-radius: 5px;
-	--pad: 35px;
-	--bleed: -10px;
-}
-.zettel-side-menu.left {
-	left: var(--bleed);
-	transform: translate(calc(var(--pad) - 100%), -50%);
-}
-.zettel-side-menu.right {
-	right: var(--bleed);
-	transform: translate(calc(100% - var(--pad)), -50%);
-}
-.zettel-side-menu:hover {
-	transform: translate(0pt, -50%);
-}
-
-.zettel-side-menu > div {
-	position: relative;
-	padding: var(--pad);
-}
-
-.zettel-side-menu .tab {
-	position: absolute;
-	top: 50%;
-	transform: translateY(-50%);
-	--tab-dist: 10px;
-}
-
-.zettel-side-menu .tab.right { right: var(--tab-dist); }
-.zettel-side-menu .tab.left { left: var(--tab-dist); }
