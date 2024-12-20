@@ -43,31 +43,6 @@ md"""
 We can check these are correct numerically:
 """
 
-# ╔═╡ c5cf6e53-510d-4d42-9c39-33012d9771ad
-@testset begin
-	ε = 1e-10
-	for (f, x...) in [
-		(+, 1, 2),
-		(-, 4, 5),
-		(*, 10, 20),
-		(/, 2, 3),
-		(exp, 4),
-		(log, 9),
-		(^, 2, 3),
-		(sin, 7),
-		(cos, 5)
-	]
-		∂f = ∂(f, x...)
-		x = BigFloat.(x)
-		for i in 1:length(x)
-			ẋ = putat(i, length(x))(1)
-			x′ = x .+ ε*ẋ
-			∂fᵢ = (f(x′...) - f(x...))/ε
-			@test ∂fᵢ ≈ ∂f[i] rtol=1e-10
-		end
-	end
-end;
-
 # ╔═╡ eafdebbb-7f85-416d-aebe-54bbf36e39e6
 md"""
 ## Type for tracking derivative data
@@ -129,15 +104,6 @@ md"""
 We can verify the adjoint relation with some tests:
 """
 
-# ╔═╡ 397b3264-66e1-4120-be5e-3bfca0652db2
-for _ in 1:100
-	n = rand(1:10)
-	i = rand(1:n)
-	x⃗ = rand(n)
-	y = rand()
-	@test pickout(i)(x⃗)'y === x⃗'putat(i, n)(y)
-end
-
 # ╔═╡ fc6e63b3-de69-4fee-834e-435d23666fc9
 md"""
 ## The `lift` functor
@@ -171,6 +137,12 @@ end
 md"""
 In the implementation, any arguments which are not a `Prop` (such as plain `Number`s) are omitted from the sum. (If all terms are omitted, the plain primal value is returned instead of a `Prop`.)
 
+"""
+
+# ╔═╡ b9b90a74-504b-4f6f-b9fa-77ae2aa5d2e0
+md"""
+!!! warning
+	Technically, this `lift` function only performs reverse-mode, building up a chain of callbacks. When used with forward-mode variables, the callbacks can be evaluated eagerly, resulting effectively in a forward pass. This implementation, however, performs both lazily.
 """
 
 # ╔═╡ 651f93c1-2184-4374-82f3-2350e3672d48
@@ -251,58 +223,16 @@ begin
 	Base.sin(a::Prop) = lift(sin)(a)
 end
 
-# ╔═╡ 914ab345-b6fe-43ee-8481-02d38d58da39
-putat(i, n) = ȳᵢ -> ȳᵢ*(i .== 1:n)
-
-# ╔═╡ a532a96f-693b-45f0-a2f3-752f06b021b1
-reverse_vars(values) = Prop.(values, putat.(eachindex(values), length(values)))
-
-# ╔═╡ 1713dc62-c13e-4505-9b84-15880e860171
-a⃐, b⃐ = reverse_vars([a, b])
-
-# ╔═╡ 74d4f88f-f1b4-4bd8-a8ec-25c2912c8f59
-f(a, b) = a*b + sin(a)
-
-# ╔═╡ b8273745-6fac-4a56-9467-73799c555dcb
-f(a, b)
-
-# ╔═╡ c4ec055c-5a3d-40f4-beca-e845a414b1fd
-(+′, *′, sin′) = (lift(+), lift(*), lift(sin));
-
-# ╔═╡ 66554ad9-c095-4d16-ba42-5166dd142066
-f′(a, b) = a*′b +′ sin′(a)
-
-# ╔═╡ d40ba902-8d04-4d1e-a28d-a535713e3b85
-f′(a, b)
-
-# ╔═╡ 5d53eb59-d611-43b0-8e82-d8f0bea2f091
-y⃑ = f′(a⃑, b⃑)
-
-# ╔═╡ e4b89483-6067-4609-b801-337c483e9c30
-y⃑.operator([1, 0])
-
-# ╔═╡ dae17a71-615d-4ef8-8bce-726971e29cd9
-y⃑.operator.([[1, 0], [0, 1]])
-
-# ╔═╡ 220bbf25-4c7e-4150-ac1b-0f7df90a3915
-f′(a⃐, b⃐).operator(1)
-
 # ╔═╡ 2b86df11-8fa3-4ecf-b89d-6004757866e3
 md"""
 Now we can use normal operators and functions with the `Prop` types.
 """
-
-# ╔═╡ 9892aeeb-4a4e-42a6-9c79-94f34dca1b2f
-a⃑ + 8*b⃑
 
 # ╔═╡ 8729d6a8-fb40-42cf-8c03-7c9c1e4256d7
 md"""
 Recall that our test function `f(a, b)` was defined using normal operators.
 It now works on `Prop`s!
 """
-
-# ╔═╡ 7bc26d17-2433-4d36-a723-dd2ad9e9a8c7
-f(a⃐, b⃐).operator(1)
 
 # ╔═╡ 1eca4129-917a-4373-a064-7cf64bdef17d
 md"""
@@ -337,6 +267,82 @@ begin
 	@lift Base.cos(a::Number)
 	@lift Base.:^(a::Number, b::Number)
 end
+
+# ╔═╡ 914ab345-b6fe-43ee-8481-02d38d58da39
+putat(i, n) = ȳᵢ -> ȳᵢ*(i .== 1:n)
+
+# ╔═╡ c5cf6e53-510d-4d42-9c39-33012d9771ad
+@testset begin
+	ε = 1e-10
+	for (f, x...) in [
+		(+, 1, 2),
+		(-, 4, 5),
+		(*, 10, 20),
+		(/, 2, 3),
+		(exp, 4),
+		(log, 9),
+		(^, 2, 3),
+		(sin, 7),
+		(cos, 5)
+	]
+		∂f = ∂(f, x...)
+		x = BigFloat.(x)
+		for i in 1:length(x)
+			ẋ = putat(i, length(x))(1)
+			x′ = x .+ ε*ẋ
+			∂fᵢ = (f(x′...) - f(x...))/ε
+			@test ∂fᵢ ≈ ∂f[i] rtol=1e-10
+		end
+	end
+end;
+
+# ╔═╡ a532a96f-693b-45f0-a2f3-752f06b021b1
+reverse_vars(values) = Prop.(values, putat.(eachindex(values), length(values)))
+
+# ╔═╡ 1713dc62-c13e-4505-9b84-15880e860171
+a⃐, b⃐ = reverse_vars([a, b])
+
+# ╔═╡ 397b3264-66e1-4120-be5e-3bfca0652db2
+for _ in 1:100
+	n = rand(1:10)
+	i = rand(1:n)
+	x⃗ = rand(n)
+	y = rand()
+	@test pickout(i)(x⃗)'y === x⃗'putat(i, n)(y)
+end
+
+# ╔═╡ 74d4f88f-f1b4-4bd8-a8ec-25c2912c8f59
+f(a, b) = a*b + sin(a)
+
+# ╔═╡ b8273745-6fac-4a56-9467-73799c555dcb
+f(a, b)
+
+# ╔═╡ 7bc26d17-2433-4d36-a723-dd2ad9e9a8c7
+f(a⃐, b⃐).operator(1)
+
+# ╔═╡ c4ec055c-5a3d-40f4-beca-e845a414b1fd
+(+′, *′, sin′) = (lift(+), lift(*), lift(sin));
+
+# ╔═╡ 66554ad9-c095-4d16-ba42-5166dd142066
+f′(a, b) = a*′b +′ sin′(a)
+
+# ╔═╡ d40ba902-8d04-4d1e-a28d-a535713e3b85
+f′(a, b)
+
+# ╔═╡ 5d53eb59-d611-43b0-8e82-d8f0bea2f091
+y⃑ = f′(a⃑, b⃑)
+
+# ╔═╡ e4b89483-6067-4609-b801-337c483e9c30
+y⃑.operator([1, 0])
+
+# ╔═╡ dae17a71-615d-4ef8-8bce-726971e29cd9
+y⃑.operator.([[1, 0], [0, 1]])
+
+# ╔═╡ 220bbf25-4c7e-4150-ac1b-0f7df90a3915
+f′(a⃐, b⃐).operator(1)
+
+# ╔═╡ 9892aeeb-4a4e-42a6-9c79-94f34dca1b2f
+a⃑ + 8*b⃑
 
 # ╔═╡ 002784c3-a11f-439a-82be-6b01c69cff2b
 md"""
@@ -427,6 +433,7 @@ version = "1.11.0"
 # ╟─fc6e63b3-de69-4fee-834e-435d23666fc9
 # ╠═790f7252-7ee2-4e06-8373-1bbe5e891398
 # ╟─106bb1fa-12c0-4ef0-ae0b-d964bfb03046
+# ╠═b9b90a74-504b-4f6f-b9fa-77ae2aa5d2e0
 # ╟─651f93c1-2184-4374-82f3-2350e3672d48
 # ╠═74d4f88f-f1b4-4bd8-a8ec-25c2912c8f59
 # ╟─0404b71b-ef92-4950-b5c7-94cce17b2870
