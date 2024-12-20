@@ -8,11 +8,11 @@
 
 #let max-dim = calc.max(..data.map(row => int(row.at("n"))))
 
-#show figure: fig => style(styles => {
-	let fig-width = measure(fig.body, styles).width
+#show figure: fig => context {
+	let fig-width = measure(fig.body).width
 	show figure.caption: box.with(width: fig-width)
 	fig
-})
+}
 
 #let clos(it) = $lr(⟦it⟧)$
 #let GL = "GL"
@@ -41,7 +41,7 @@ However, this can be reduced to $2^ceil(d slash 2)$ for a general $d$-dimensiona
 
 == From numerical simulations
 
-We have "seen" that even multivectors may be inverted in $2^floor(d slash 2)$ steps (tested for non-degenerate geometric algebras in $<= 13$ dimensions).
+From @flv-experiments[numerical testing] in non-degenerate geometric algebras in $<= 13$ dimensions, we have seen that even multivectors may be inverted in $2^floor(d slash 2)$ steps.
 Furthermore, for homogeneous multivectors of a given grade, the minimum number of steps is shown in @patterns.
 
 #figure({
