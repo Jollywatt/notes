@@ -57,6 +57,7 @@ function headercontent(n)
 	:typ in keys(n.files) && push!(items, link("$(n.name).typ", "typst source"))
 	:tex in keys(n.files) && push!(items, link("$(n.name).tex", "LaTeX source"))
 	:jl in keys(n.files) && push!(items, link("$(n.name).jl", "Julia source"))
+	push!(items, link(copyright_url(), "©"))
 	join(items, " • ")
 end
 
