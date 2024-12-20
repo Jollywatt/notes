@@ -14,9 +14,10 @@ using Test
 md"""
 # The simplest operator overloading forward- and reverse-mode automatic differentiation implementation you could possibly come up with
 
-
 This notebook describes a minimal implementation of automatic differentiation which uses a single functor construction to perform both forward- and reverse-mode passes.
 I think it's really neat.
+
+Compare this to the [tape-based implementation](https://jollywatt.github.io/notes/simple-tape-autodiff).
 """
 
 # ╔═╡ 24c4c2f5-7fc1-47f1-b3ad-2fe50505e585

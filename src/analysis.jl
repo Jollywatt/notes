@@ -1,9 +1,12 @@
 function extractlinks(note)
 	if note.kind == :typst_pdf
-		file = joinpath(note.srcdir, note.files[:typ])
-		src = read(file, String)
+		src = read(joinpath(note.srcdir, note.files[:typ]), String)
 		src = replace(src, r"^#import .*$"m=>"")
 		hits = eachmatch(r"@([\w-]+)\b", src)
+		names = getindex.(hits, 1)
+	elseif note.kind == :pluto_notebook
+		src = read(joinpath(note.srcdir, note.files[:jl]), String)
+		hits = eachmatch(Templates.SITE*Templates.ROOT*r"/([\w-]+)", src)
 		names = getindex.(hits, 1)
 	else
 		String[]
