@@ -10,6 +10,9 @@ using InteractiveUtils
 # ╔═╡ c9afba79-377b-4e87-85e1-9adbe86feb53
 using Test
 
+# ╔═╡ cf3a3089-f22a-4bdd-8005-ca0839e87855
+include("partials.note.jl")
+
 # ╔═╡ a5aec48a-a3c2-496b-b7fb-233a3637d959
 md"""
 # The simplest operator overloading forward- and reverse-mode automatic differentiation implementation you could possibly come up with
@@ -22,29 +25,48 @@ Compare this to the [tape-based implementation](https://jollywatt.github.io/note
 
 # ╔═╡ 24c4c2f5-7fc1-47f1-b3ad-2fe50505e585
 md"""
-To begin, define the partial derivatives of a few elementary functions.
-"""
+To begin, we define the partial derivatives of a few elementary functions.
+This is done with the `∂` function.
 
-# ╔═╡ cf3a3089-f22a-4bdd-8005-ca0839e87855
-begin
-	∂(::typeof(+), a, b) = (one(a), one(b))
-	∂(::typeof(-), a) = -one(a)
-	∂(::typeof(-), a, b) = (one(a), -one(b))
-	∂(::typeof(*), a, b) = (b, a)
-	∂(::typeof(inv), a) = -inv(a)^2
-	∂(::typeof(/), a, b) = (inv(b), -a*inv(b)^2)
-	∂(::typeof(exp), a) = exp(a)
-	∂(::typeof(log), a) = inv(a)
-	∂(::typeof(sqrt), a) = -inv(2sqrt(a))
-	∂(::typeof(sin), a) = cos(a)
-	∂(::typeof(cos), a) = -sin(a)
-	∂(::typeof(^), a, b) = (b*a^(b - 1), log(a)*a^b)
-end
+!!! definition
+	For a function ``f``, define the tuple of partial derivatives as
+	```math
+	∂(f, x_1, ..., x_n) := \left(\frac{∂f}{∂x_1}, ..., \frac{∂f}{∂x_n}\right)
+	```
+	where the derivatives are evaluated at ``(x_1, ..., x_n)``.
+
+Here, we load some methods for the `∂` function defined in [this Julia file](https://jollywatt.github.io/notes/partials).
+"""
 
 # ╔═╡ e9fe864c-f677-4221-8da5-677bf5b5248a
 md"""
 We can check these are correct numerically:
 """
+
+# ╔═╡ c5cf6e53-510d-4d42-9c39-33012d9771ad
+@testset begin
+	ε = 1e-10
+	for (f, x...) in [
+		(+, 1, 2),
+		(-, 4, 5),
+		(*, 10, 20),
+		(/, 2, 3),
+		(exp, 4),
+		(log, 9),
+		(^, 2, 3),
+		(sin, 7),
+		(cos, 5)
+	]
+		∂f = ∂(f, x...)
+		x = BigFloat.(x)
+		for i in 1:length(x)
+			ẋ = putat(i, length(x))(1)
+			x′ = x .+ ε*ẋ
+			∂fᵢ = (f(x′...) - f(x...))/ε
+			@test ∂fᵢ ≈ ∂f[i] rtol=1e-10
+		end
+	end
+end;
 
 # ╔═╡ eafdebbb-7f85-416d-aebe-54bbf36e39e6
 md"""
@@ -106,6 +128,15 @@ md"""
 
 We can verify the adjoint relation with some tests:
 """
+
+# ╔═╡ 397b3264-66e1-4120-be5e-3bfca0652db2
+for _ in 1:100
+	n = rand(1:10)
+	i = rand(1:n)
+	x⃗ = rand(n)
+	y = rand()
+	@test pickout(i)(x⃗)'y === x⃗'putat(i, n)(y)
+end
 
 # ╔═╡ fc6e63b3-de69-4fee-834e-435d23666fc9
 md"""
@@ -220,16 +251,58 @@ begin
 	Base.sin(a::Prop) = lift(sin)(a)
 end
 
+# ╔═╡ 914ab345-b6fe-43ee-8481-02d38d58da39
+putat(i, n) = ȳᵢ -> ȳᵢ*(i .== 1:n)
+
+# ╔═╡ a532a96f-693b-45f0-a2f3-752f06b021b1
+reverse_vars(values) = Prop.(values, putat.(eachindex(values), length(values)))
+
+# ╔═╡ 1713dc62-c13e-4505-9b84-15880e860171
+a⃐, b⃐ = reverse_vars([a, b])
+
+# ╔═╡ 74d4f88f-f1b4-4bd8-a8ec-25c2912c8f59
+f(a, b) = a*b + sin(a)
+
+# ╔═╡ b8273745-6fac-4a56-9467-73799c555dcb
+f(a, b)
+
+# ╔═╡ c4ec055c-5a3d-40f4-beca-e845a414b1fd
+(+′, *′, sin′) = (lift(+), lift(*), lift(sin));
+
+# ╔═╡ 66554ad9-c095-4d16-ba42-5166dd142066
+f′(a, b) = a*′b +′ sin′(a)
+
+# ╔═╡ d40ba902-8d04-4d1e-a28d-a535713e3b85
+f′(a, b)
+
+# ╔═╡ 5d53eb59-d611-43b0-8e82-d8f0bea2f091
+y⃑ = f′(a⃑, b⃑)
+
+# ╔═╡ e4b89483-6067-4609-b801-337c483e9c30
+y⃑.operator([1, 0])
+
+# ╔═╡ dae17a71-615d-4ef8-8bce-726971e29cd9
+y⃑.operator.([[1, 0], [0, 1]])
+
+# ╔═╡ 220bbf25-4c7e-4150-ac1b-0f7df90a3915
+f′(a⃐, b⃐).operator(1)
+
 # ╔═╡ 2b86df11-8fa3-4ecf-b89d-6004757866e3
 md"""
 Now we can use normal operators and functions with the `Prop` types.
 """
+
+# ╔═╡ 9892aeeb-4a4e-42a6-9c79-94f34dca1b2f
+a⃑ + 8*b⃑
 
 # ╔═╡ 8729d6a8-fb40-42cf-8c03-7c9c1e4256d7
 md"""
 Recall that our test function `f(a, b)` was defined using normal operators.
 It now works on `Prop`s!
 """
+
+# ╔═╡ 7bc26d17-2433-4d36-a723-dd2ad9e9a8c7
+f(a⃐, b⃐).operator(1)
 
 # ╔═╡ 1eca4129-917a-4373-a064-7cf64bdef17d
 md"""
@@ -264,82 +337,6 @@ begin
 	@lift Base.cos(a::Number)
 	@lift Base.:^(a::Number, b::Number)
 end
-
-# ╔═╡ 914ab345-b6fe-43ee-8481-02d38d58da39
-putat(i, n) = ȳᵢ -> ȳᵢ*(i .== 1:n)
-
-# ╔═╡ c5cf6e53-510d-4d42-9c39-33012d9771ad
-@testset begin
-	ε = 1e-10
-	for (f, x...) in [
-		(+, 1, 2),
-		(-, 4, 5),
-		(*, 10, 20),
-		(/, 2, 3),
-		(exp, 4),
-		(log, 9),
-		(^, 2, 3),
-		(sin, 7),
-		(cos, 5)
-	]
-		∂f = ∂(f, x...)
-		x = BigFloat.(x)
-		for i in 1:length(x)
-			ẋ = putat(i, length(x))(1)
-			x′ = x .+ ε*ẋ
-			∂fᵢ = (f(x′...) - f(x...))/ε
-			@test ∂fᵢ ≈ ∂f[i] rtol=1e-10
-		end
-	end
-end;
-
-# ╔═╡ a532a96f-693b-45f0-a2f3-752f06b021b1
-reverse_vars(values) = Prop.(values, putat.(eachindex(values), length(values)))
-
-# ╔═╡ 1713dc62-c13e-4505-9b84-15880e860171
-a⃐, b⃐ = reverse_vars([a, b])
-
-# ╔═╡ 397b3264-66e1-4120-be5e-3bfca0652db2
-for _ in 1:100
-	n = rand(1:10)
-	i = rand(1:n)
-	x⃗ = rand(n)
-	y = rand()
-	@test pickout(i)(x⃗)'y === x⃗'putat(i, n)(y)
-end
-
-# ╔═╡ 74d4f88f-f1b4-4bd8-a8ec-25c2912c8f59
-f(a, b) = a*b + sin(a)
-
-# ╔═╡ b8273745-6fac-4a56-9467-73799c555dcb
-f(a, b)
-
-# ╔═╡ 7bc26d17-2433-4d36-a723-dd2ad9e9a8c7
-f(a⃐, b⃐).operator(1)
-
-# ╔═╡ c4ec055c-5a3d-40f4-beca-e845a414b1fd
-(+′, *′, sin′) = (lift(+), lift(*), lift(sin));
-
-# ╔═╡ 66554ad9-c095-4d16-ba42-5166dd142066
-f′(a, b) = a*′b +′ sin′(a)
-
-# ╔═╡ d40ba902-8d04-4d1e-a28d-a535713e3b85
-f′(a, b)
-
-# ╔═╡ 5d53eb59-d611-43b0-8e82-d8f0bea2f091
-y⃑ = f′(a⃑, b⃑)
-
-# ╔═╡ e4b89483-6067-4609-b801-337c483e9c30
-y⃑.operator([1, 0])
-
-# ╔═╡ dae17a71-615d-4ef8-8bce-726971e29cd9
-y⃑.operator.([[1, 0], [0, 1]])
-
-# ╔═╡ 220bbf25-4c7e-4150-ac1b-0f7df90a3915
-f′(a⃐, b⃐).operator(1)
-
-# ╔═╡ 9892aeeb-4a4e-42a6-9c79-94f34dca1b2f
-a⃑ + 8*b⃑
 
 # ╔═╡ 002784c3-a11f-439a-82be-6b01c69cff2b
 md"""
