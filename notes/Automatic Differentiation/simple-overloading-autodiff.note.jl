@@ -15,10 +15,10 @@ include("partials.note.jl")
 
 # ╔═╡ a5aec48a-a3c2-496b-b7fb-233a3637d959
 md"""
-# The simplest operator overloading forward- and reverse-mode automatic differentiation implementation you could possibly come up with
+# Forward- and reverse-mode automatic differentiation by operator overloading
 
-This notebook describes a minimal implementation of automatic differentiation which uses a single functor construction to perform both forward- and reverse-mode passes.
-I think it's really neat.
+This is a minimal, pedagogical automatic differentiation implementation using operator overloading.
+Both forward- and reverse-mode are supported.
 
 Compare this to the [tape-based implementation](https://jollywatt.github.io/notes/simple-tape-autodiff).
 """
@@ -45,162 +45,97 @@ We can check these are correct numerically:
 
 # ╔═╡ eafdebbb-7f85-416d-aebe-54bbf36e39e6
 md"""
-## Type for tracking derivative data
+## Types for tracking derivative data
+
+We define some types used to propagate derivatives in both forward- and reverse-mode.
+Forward-mode uses [dual numbers](https://en.wikipedia.org/wiki/Dual_number), and reverse-mode uses codual numbers, in which the tangent part is a callback.
 """
 
-# ╔═╡ 855d6743-f6bf-49ef-9c64-daf9d18f9d95
+# ╔═╡ 427a1337-c28d-4f24-9076-52c358f1f893
 md"""
-Next, introduce a type that represents a **pr**imal value together with a linear **op**erator, called `Prop` for want of a better name.
-The primal field holds a normal value (i.e., not a derivative) and the linear operator encodes derivative information.
+### Dual numbers for forward-mode
 """
 
 # ╔═╡ e8b5b27e-bda9-11ef-32f4-19ea12987b49
-struct Prop{X,O<:Function}
-	primal::X
-	operator::O
+struct Dual{T,dT}
+	x::T
+	dx::dT
 end
 
 # ╔═╡ 03e87b3e-c96a-435a-bd4f-5d23ebea9f1c
-primal(a::Prop) = a.primal
+primal(a::Dual) = a.x
 
-# ╔═╡ a7ac75f8-9834-4cf7-bc30-6cd58d60c769
-primal(a::Number) = a
+# ╔═╡ 8c1c788e-1f01-44a5-9e8d-faf46f8ca90d
+tangent(a::Dual) = a.dx
 
-# ╔═╡ fe7f8fa6-9981-4be9-96ab-9f82abcb6961
+# ╔═╡ 92c73763-8dcb-407f-ba00-89423cf2de1e
 md"""
-### Operators for forward- and reverse-mode
-
-Here is where the magic happens.
-We now initialise some `Prop`s with specific linear operators which make them perform forward- or reverse-mode autodiff when passed to `lift`ed functions.
+### Codual numbers for reverse-mode
 """
 
-# ╔═╡ e71013f4-6a85-4dfd-bf10-50bd897ebc09
-md"""
-For forward mode, the ``i``th input variable becomes a `Prop` whose operator picks out the ``i``th value in a given vector.
-This vector will contain the input derivatives ``[ẋ_1, ..., ẋ_n]`` which are supplied to the forward-mode derivative ``D f [x_1, ..., x_n](ẋ_1, ..., ẋ_n)``, so that the ``i``th input picks out ``ẋ_i``.
-"""
+# ╔═╡ 1c8a1db6-2970-48ce-b285-5e8ffcd4b946
+struct CoDual{T}
+	x::T
+	back::Function
+end
 
-# ╔═╡ b3a4f280-2fed-4ebd-b193-c42a08fc7e0a
-pickout(i) = ẋ -> ẋ[i]
+# ╔═╡ 76f9c5a6-71a6-42dc-8781-6e6eda7a1951
+primal(a::CoDual) = a.x
 
-# ╔═╡ 6d6e7a5f-7206-4612-b650-4f28ca61e0bb
-forward_vars(values) = Prop.(values, pickout.(eachindex(values)))
-
-# ╔═╡ 2fa838a9-6264-43c6-8cc2-ab7fef31a573
-md"""
-For reverse mode, the ``i``th input variable becomes a `Prop` whose operator inserts a given value into the ``i``th component of a zero vector.
-The given value will contain the output derivative ``ȳ_i`` which is supplied to the reverse-mode derivative ``D f[x_1, ..., x_n]^* (ȳ_1, ..., ȳ_m)``.
-"""
-
-# ╔═╡ 79090ad4-bffb-4c89-ab09-b287ee9e4746
-md"""
-!!! note
-	It is a cute fact that the operator `pickout` is _adjoint_ to `putat` in the sense that
-	```math
-	\langle \texttt{pickout}_i \, \vec x, y\rangle = \langle \vec x, \texttt{putat}_i \,y\rangle
-	```
-	for the standard inner product. Here, ``\dim \vec x = n`` and ``\texttt{putat}_i \, y`` is really `putat(i, n)(y)`.
-
-We can verify the adjoint relation with some tests:
-"""
+# ╔═╡ c957ce5f-030e-4fb1-9eab-a2f8e49aafa0
+cotangent(a::CoDual, x) = a.back(x)
 
 # ╔═╡ fc6e63b3-de69-4fee-834e-435d23666fc9
 md"""
-## The `lift` functor
-
-Now define a higher-order function `lift` which maps scalar functions to functions on `Prop`s.
-The function `lift(f)` accepts `Prop`s as input and returns a `Prop` containing the primal value `f(x)` and a linear operator encoding the derivative of `f`.
-
-!!! definition
-	If ``f(x)`` is a function's value at the primal ``x``, then the lifted function is
-	```math
-	\texttt{lift}(f)(\texttt{Prop}(x, A)) = \texttt{Prop}(f(x), t \mapsto \textstyle\frac{∂f}{∂x} A(t)).
-	```
-	If ``f(x_1, ..., x_n)``, then
-	```math
-	\texttt{lift}(f)(\texttt{Prop}(x_1, A_1), ..., \texttt{Prop}(x_n, A_n)) =
-	\texttt{Prop}\left(f(x_1, ..., x_n), ξ \mapsto \textstyle \sum_i \frac{∂f}{∂x_i} A_i(ξ)\right).
-	```
-"""
-
-# ╔═╡ 790f7252-7ee2-4e06-8373-1bbe5e891398
-lift(f) = function(x...)
-	y = f(primal.(x)...)
-	I = findall(xᵢ -> xᵢ isa Prop, x)
-	isempty(I) && return y
-	∂f = ∂(f, primal.(x)...)
-	A = a -> sum(∂f[i]*x[i].operator(a) for i in I)
-	Prop(y, A)
-end
-
-# ╔═╡ 106bb1fa-12c0-4ef0-ae0b-d964bfb03046
-md"""
-In the implementation, any arguments which are not a `Prop` (such as plain `Number`s) are omitted from the sum. (If all terms are omitted, the plain primal value is returned instead of a `Prop`.)
-
-"""
-
-# ╔═╡ b9b90a74-504b-4f6f-b9fa-77ae2aa5d2e0
-md"""
-!!! warning
-	Technically, this `lift` function only performs reverse-mode, building up a chain of callbacks. When used with forward-mode variables, the callbacks can be evaluated eagerly, resulting effectively in a forward pass. This implementation, however, performs both lazily.
+## Function application on (co)dual numbers
+We now define higher-order functions that lift scalar functions to functions that operate on our `Dual` and `CoDual` types.
 """
 
 # ╔═╡ 651f93c1-2184-4374-82f3-2350e3672d48
 md"""
-### `lift`ing composite functions
+## Differentiating composite functions
 
 Suppose we have the function ``f(a, b) = a b + \sin(a)`` which we wish to differentiate.
-"""
-
-# ╔═╡ 0404b71b-ef92-4950-b5c7-94cce17b2870
-md"""
-Picking some primal values for our function:
-"""
-
-# ╔═╡ 3c737d35-ccf9-4e41-bf8b-6f0ecc105019
-a, b = 5, 2
-
-# ╔═╡ b4340e13-04e7-464c-b51e-6830ed50b30d
-md"""
-We can manually construct `lift(f)` by writing it in terms of lifted versions of elementary functions.
-"""
-
-# ╔═╡ e3b2b3b5-0f3e-494e-afec-09684936467a
-md"""
-To run the forward-mode derivative program, we declare some forward-mode variables and pass them to `lift`ed function calls.
 """
 
 # ╔═╡ 61afbb00-95ce-45bb-9a58-01741df61cdf
 md"""
 ### Forward mode
 
-Now we can bring everything together and actually compute derivatives.
-First, lift each primal input value into a `Prop` with a forward-mode operator:
+Suppose we have the function ``f(a, b) = a b + \sin(a)`` which we wish to differentiate.
 """
 
-# ╔═╡ 1b5098d4-9a38-4687-a259-339e8dc39037
-a⃑, b⃑ = forward_vars([a, b])
+# ╔═╡ 55ce1766-d7b9-4041-8ab4-7a35d361c549
+md"""
+The lifted version of this function is:
+"""
+
+# ╔═╡ c3c8f31b-9ed1-4b28-bfd0-f87ec389b8db
+md"""
+Here are the `Dual` variables which differentiate in the ``(\dot a, \dot b) = (1, 0)`` direction:
+"""
 
 # ╔═╡ 75a7db34-d152-4720-a7c9-1cf2e7779108
 md"""
-Calling the lifted function on these produces the primal value and a callback which computes the directional derivative of ``f`` in a given direction.
-"""
-
-# ╔═╡ 534f9d8b-782d-4cc5-bf86-b15d63b9a1f8
-md"""
-For example, to compute ``∂f/∂a``, we supply ``(\delta a, \delta b) = (1, 0)`` to the forward-mode operator:
+Calling the lifted function on these produces the primal value and the directional derivative.
 """
 
 # ╔═╡ 6cd4fad4-f873-4e23-b0e1-de2a7a4bf9fc
 md"""
-To compute the full gradient ``∇f``, call the operator once for each input variable:
+To compute the full gradient ``∇f``, we take a directional derivative with respect to each input.
+This can be paralised by making the tangent components for each input vectors.
 """
 
 # ╔═╡ f8cc2efb-ff19-4c8f-bce1-e70915eee05a
 md"""
 ### Reverse mode
 
-Reverse-mode is similar, except we use `Prop`s with reverse-mode operators instead.
+Reverse-mode is similar, except that we use the `codual` functor instead.
+"""
+
+# ╔═╡ 2667ac0b-c94a-4d9c-be0c-cc54237bf6a9
+md"""
+We also need to setup some memory for the `CoDual` callbacks to write to during the reverse pass.
 """
 
 # ╔═╡ 40cf450c-76e2-492d-a7a0-14a8e05fe033
@@ -208,31 +143,88 @@ md"""
 Now, we only need to call the output operator once to compute the full gradient.
 """
 
+# ╔═╡ 28424ef1-dc02-4ba4-b11f-1bece1e91499
+md"""
+## Making the code more generic
+
+The functions `dual(f)` and `codual(f)` assume that its inputs `x` are all instances of `Dual` or `CoDual`, respectively.
+
+For this to work on other types (for example, constants given as plain `Number`s), we need to define `primal` and `tangent` on other types.
+"""
+
+# ╔═╡ a7ac75f8-9834-4cf7-bc30-6cd58d60c769
+primal(a) = a
+
+# ╔═╡ f6b1c226-b632-4a3d-a138-ac0a15d5ac66
+md"""
+Anything that is not a (co)dual is treated as a constant with no derivative.
+For dual numbers, the additive identity to use is clear:
+"""
+
+# ╔═╡ 787fad68-3259-4ca2-a0fb-f372694be2aa
+tangent(a) = zero(a)
+
+# ╔═╡ a34ab926-15ad-414e-9558-158763a66a6f
+md"""
+However, for codual numbers, we don't know what additive identity to use, because the `back` function could return an array of unspecified size, for example.
+
+Instead, we can define a singleton `ZeroTangent()` which acts as an additive identity for everything.
+"""
+
+# ╔═╡ aba756e2-c09f-49cd-a265-eee767d5fe31
+begin
+	struct ZeroTangent end
+	Base.:*(a, ::ZeroTangent) = ZeroTangent()
+	Base.:*(::ZeroTangent, a) = ZeroTangent()
+	Base.:+(a, ::ZeroTangent) = a
+	Base.:+(::ZeroTangent, a) = a
+	Base.:+(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
+end
+
+# ╔═╡ 790f7252-7ee2-4e06-8373-1bbe5e891398
+dual(f) = function(x...)
+	y = f(primal.(x)...)
+	∂f = ∂(f, primal.(x)...)
+	ẏ = sum(∂f .* tangent.(x))
+	Dual(y, ẏ)
+end
+
+# ╔═╡ 7fac0358-44a7-4050-a356-618306115487
+cotangent(a, x) = ZeroTangent()
+
+# ╔═╡ 638f247b-4b09-4160-bcd1-e0f91faa38d2
+codual(f) = function(x...)
+	y = f(primal.(x)...)
+	∂f = ∂(f, primal.(x)...)
+	ȳ = t -> for (∂fᵢ, xᵢ) in zip(∂f, x)
+		cotangent(xᵢ, ∂fᵢ*t)
+	end
+	CoDual(y, ȳ)
+end
+
+# ╔═╡ d6b48c67-b09a-44a5-970f-5111c3f07453
+md"""
+Now, lifted functions work on non-(co)dual types.
+"""
+
+# ╔═╡ 0404b71b-ef92-4950-b5c7-94cce17b2870
+md"""
+Picking some primal values for our function:
+"""
+
 # ╔═╡ ef133164-bcde-4703-82dc-b5f2617b9364
 md"""
 ## Operator overloading
 
-The finishing touch is to define `Prop` methods for the all the relevant elementary functions.
-Each method must simply redirect its arguments to the `lift`ed function.
+The finishing touch is to define (co)dualised methods for the all the relevant elementary functions.
+Each method must simply redirect its arguments to the lifted function.
 """
 
-# ╔═╡ 461fc25d-a20a-4a6b-b4c4-fda5f1589aeb
-begin
-	Base.:*(a::Union{Prop,Number}, b::Union{Prop,Number}) = lift(*)(a, b)
-	Base.:+(a::Union{Prop,Number}, b::Union{Prop,Number}) = lift(+)(a, b)
-	Base.sin(a::Prop) = lift(sin)(a)
-end
+# ╔═╡ 390c6c7d-cd27-4da8-982d-a92e35c83f1f
+Base.sin(a::Dual) = dual(sin)(a)
 
-# ╔═╡ 2b86df11-8fa3-4ecf-b89d-6004757866e3
-md"""
-Now we can use normal operators and functions with the `Prop` types.
-"""
-
-# ╔═╡ 8729d6a8-fb40-42cf-8c03-7c9c1e4256d7
-md"""
-Recall that our test function `f(a, b)` was defined using normal operators.
-It now works on `Prop`s!
-"""
+# ╔═╡ 9a6dedbd-68cd-4f80-8595-a099c1f2dc28
+Base.sin(a::CoDual) = codual(sin)(a)
 
 # ╔═╡ 1eca4129-917a-4373-a064-7cf64bdef17d
 md"""
@@ -243,14 +235,19 @@ A simple macro can help with writing method definitions for many elementary func
 macro lift(expr)
 	fn, args... = expr.args
 	varnames, types = zip(getfield.(args, :args)...)
-	if length(args) > 1
-		types = [:(Union{Prop{<:$T},$T}) for T in types]
-	else
-		types = [:(Prop{<:$T}) for T in types]
+
+	stmts = Expr[]
+	for (dualtype, wrapper) in [:Dual => :dual, :CoDual => :codual]
+		if length(args) > 1
+			types′ = [:(Union{$dualtype{<:$T},$T}) for T in types]
+		else
+			types′ = [:($dualtype{<:$T}) for T in types]
+		end
+		sig = [:($var::$T) for (var, T) in zip(varnames, types′) ]
+		stmt = :( $fn($(sig...)) = $wrapper($fn)($(varnames...)) )
+		push!(stmts, stmt)
 	end
-	sig = [:($var::$T) for (var, T) in zip(varnames, types) ]
-	
-	:( $fn($(sig...)) = lift($fn)($(varnames...)) )
+	:(begin $(stmts...) end)
 end
 
 # ╔═╡ a5e82415-35b4-437f-845c-0bbd72d663c4
@@ -268,8 +265,8 @@ begin
 	@lift Base.:^(a::Number, b::Number)
 end
 
-# ╔═╡ 914ab345-b6fe-43ee-8481-02d38d58da39
-putat(i, n) = ȳᵢ -> ȳᵢ*(i .== 1:n)
+# ╔═╡ 2f724018-2253-4676-92b9-0a192564453b
+∂(sin, 4) ≈ cos(4)
 
 # ╔═╡ c5cf6e53-510d-4d42-9c39-33012d9771ad
 @testset begin
@@ -288,7 +285,7 @@ putat(i, n) = ȳᵢ -> ȳᵢ*(i .== 1:n)
 		∂f = ∂(f, x...)
 		x = BigFloat.(x)
 		for i in 1:length(x)
-			ẋ = putat(i, length(x))(1)
+			ẋ = 1:length(x) .== i
 			x′ = x .+ ε*ẋ
 			∂fᵢ = (f(x′...) - f(x...))/ε
 			@test ∂fᵢ ≈ ∂f[i] rtol=1e-10
@@ -296,67 +293,72 @@ putat(i, n) = ȳᵢ -> ȳᵢ*(i .== 1:n)
 	end
 end;
 
-# ╔═╡ a532a96f-693b-45f0-a2f3-752f06b021b1
-reverse_vars(values) = Prop.(values, putat.(eachindex(values), length(values)))
+# ╔═╡ 087e447d-499b-423d-8846-8d555fb96b93
+(a, b) = (5, 3); f(a, b) = a*b + sin(a)
 
-# ╔═╡ 1713dc62-c13e-4505-9b84-15880e860171
-a⃐, b⃐ = reverse_vars([a, b])
-
-# ╔═╡ 397b3264-66e1-4120-be5e-3bfca0652db2
-for _ in 1:100
-	n = rand(1:10)
-	i = rand(1:n)
-	x⃗ = rand(n)
-	y = rand()
-	@test pickout(i)(x⃗)'y === x⃗'putat(i, n)(y)
-end
-
-# ╔═╡ 74d4f88f-f1b4-4bd8-a8ec-25c2912c8f59
-f(a, b) = a*b + sin(a)
-
-# ╔═╡ b8273745-6fac-4a56-9467-73799c555dcb
-f(a, b)
-
-# ╔═╡ 7bc26d17-2433-4d36-a723-dd2ad9e9a8c7
-f(a⃐, b⃐).operator(1)
+# ╔═╡ 1b5098d4-9a38-4687-a259-339e8dc39037
+a⃑, b⃑ = Dual.([a, b], [1, 0])
 
 # ╔═╡ c4ec055c-5a3d-40f4-beca-e845a414b1fd
-(+′, *′, sin′) = (lift(+), lift(*), lift(sin));
-
-# ╔═╡ 66554ad9-c095-4d16-ba42-5166dd142066
-f′(a, b) = a*′b +′ sin′(a)
-
-# ╔═╡ d40ba902-8d04-4d1e-a28d-a535713e3b85
-f′(a, b)
+f_dual(a, b) = let (+, *, sin) = dual.((+, *, sin))
+	a*b + sin(a)
+end
 
 # ╔═╡ 5d53eb59-d611-43b0-8e82-d8f0bea2f091
-y⃑ = f′(a⃑, b⃑)
+f_dual(a⃑, b⃑)
 
-# ╔═╡ e4b89483-6067-4609-b801-337c483e9c30
-y⃑.operator([1, 0])
+# ╔═╡ 724fb2b2-0611-4f7f-8ccb-a87eea4f30bb
+let (a⃑, b⃑) = Dual.([a, b], eachcol([1 0; 0 1]))
+	f_dual(a⃑, b⃑)
+end
 
-# ╔═╡ dae17a71-615d-4ef8-8bce-726971e29cd9
-y⃑.operator.([[1, 0], [0, 1]])
+# ╔═╡ b0f09d8b-dba6-4712-8217-e67353588094
+f_dual(Dual(5, 1), 3)
 
-# ╔═╡ 220bbf25-4c7e-4150-ac1b-0f7df90a3915
-f′(a⃐, b⃐).operator(1)
+# ╔═╡ 4ba47bfd-ac0f-4c36-8041-5de6c6340c76
+f_codual(a, b) = let (+, *, sin) = codual.((+, *, sin))
+	a*b + sin(a)
+end
 
-# ╔═╡ 9892aeeb-4a4e-42a6-9c79-94f34dca1b2f
-a⃑ + 8*b⃑
+# ╔═╡ a54df0d9-d7cc-493d-a83a-c86754d3e5d8
+function reverse_vars(values)
+	grads = zeros(length(values))
+	grads, [CoDual(v, t -> grads[i] += t) for (i, v) in enumerate(values)]
+end
+
+# ╔═╡ 3178628d-8558-47be-a7ac-1e74fa3eee5a
+let (grads, (a⃐, b⃐)) = reverse_vars([5, 3])
+	f_codual(a⃐, b⃐).back(1)
+	grads
+end
+
+# ╔═╡ 2b86df11-8fa3-4ecf-b89d-6004757866e3
+md"""
+Now we can use normal operators and functions with the `Prop` types.
+"""
+
+# ╔═╡ 8729d6a8-fb40-42cf-8c03-7c9c1e4256d7
+md"""
+Recall our test function `f(a, b)`, defined using normal operators.
+It now works on `Dual`s!
+"""
+
+# ╔═╡ c7eb4334-6a0d-4546-9148-27a53a5d3b8d
+f(Dual(5, 1), 3)
 
 # ╔═╡ 002784c3-a11f-439a-82be-6b01c69cff2b
 md"""
-Now you can build up more complex functions and perform forward- and reverse-mode audodiff!
+Now you can build up more complex functions and perform forward- and reverse-mode autodiff. 🥳
 """
 
 # ╔═╡ 73a5eedf-a945-4cb9-8635-233686b810bc
 g(A, B, C, D) = -sqrt(A + D^2) + log(B)cos(π*C - A/sqrt(D))
 
 # ╔═╡ cf72d1a5-84c8-4963-8833-d1345510d2a3
-A, B, C, D = reverse_vars(BigFloat[1, 2, 3, 4])
-
-# ╔═╡ 288914f4-70d1-4c09-831a-fef131547b5a
-g(A, B, C, D).operator(1)
+let (grads, (A, B, C, D)) = reverse_vars(BigFloat[1, 2, 3, 4])
+	g(A, B, C, D).back(1)
+	grads
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -413,61 +415,60 @@ version = "1.11.0"
 # ╟─a5aec48a-a3c2-496b-b7fb-233a3637d959
 # ╟─24c4c2f5-7fc1-47f1-b3ad-2fe50505e585
 # ╠═cf3a3089-f22a-4bdd-8005-ca0839e87855
+# ╠═2f724018-2253-4676-92b9-0a192564453b
 # ╟─e9fe864c-f677-4221-8da5-677bf5b5248a
 # ╟─c5cf6e53-510d-4d42-9c39-33012d9771ad
 # ╟─c9afba79-377b-4e87-85e1-9adbe86feb53
 # ╟─eafdebbb-7f85-416d-aebe-54bbf36e39e6
-# ╟─855d6743-f6bf-49ef-9c64-daf9d18f9d95
+# ╟─427a1337-c28d-4f24-9076-52c358f1f893
 # ╠═e8b5b27e-bda9-11ef-32f4-19ea12987b49
 # ╠═03e87b3e-c96a-435a-bd4f-5d23ebea9f1c
-# ╠═a7ac75f8-9834-4cf7-bc30-6cd58d60c769
-# ╟─fe7f8fa6-9981-4be9-96ab-9f82abcb6961
-# ╟─e71013f4-6a85-4dfd-bf10-50bd897ebc09
-# ╠═b3a4f280-2fed-4ebd-b193-c42a08fc7e0a
-# ╠═6d6e7a5f-7206-4612-b650-4f28ca61e0bb
-# ╟─2fa838a9-6264-43c6-8cc2-ab7fef31a573
-# ╠═914ab345-b6fe-43ee-8481-02d38d58da39
-# ╠═a532a96f-693b-45f0-a2f3-752f06b021b1
-# ╟─79090ad4-bffb-4c89-ab09-b287ee9e4746
-# ╠═397b3264-66e1-4120-be5e-3bfca0652db2
+# ╠═8c1c788e-1f01-44a5-9e8d-faf46f8ca90d
+# ╟─92c73763-8dcb-407f-ba00-89423cf2de1e
+# ╠═1c8a1db6-2970-48ce-b285-5e8ffcd4b946
+# ╠═76f9c5a6-71a6-42dc-8781-6e6eda7a1951
+# ╠═c957ce5f-030e-4fb1-9eab-a2f8e49aafa0
 # ╟─fc6e63b3-de69-4fee-834e-435d23666fc9
 # ╠═790f7252-7ee2-4e06-8373-1bbe5e891398
-# ╟─106bb1fa-12c0-4ef0-ae0b-d964bfb03046
-# ╠═b9b90a74-504b-4f6f-b9fa-77ae2aa5d2e0
+# ╠═638f247b-4b09-4160-bcd1-e0f91faa38d2
 # ╟─651f93c1-2184-4374-82f3-2350e3672d48
-# ╠═74d4f88f-f1b4-4bd8-a8ec-25c2912c8f59
-# ╟─0404b71b-ef92-4950-b5c7-94cce17b2870
-# ╠═3c737d35-ccf9-4e41-bf8b-6f0ecc105019
-# ╠═b8273745-6fac-4a56-9467-73799c555dcb
-# ╟─b4340e13-04e7-464c-b51e-6830ed50b30d
-# ╠═c4ec055c-5a3d-40f4-beca-e845a414b1fd
-# ╠═66554ad9-c095-4d16-ba42-5166dd142066
-# ╠═d40ba902-8d04-4d1e-a28d-a535713e3b85
-# ╟─e3b2b3b5-0f3e-494e-afec-09684936467a
 # ╟─61afbb00-95ce-45bb-9a58-01741df61cdf
+# ╠═087e447d-499b-423d-8846-8d555fb96b93
+# ╟─55ce1766-d7b9-4041-8ab4-7a35d361c549
+# ╠═c4ec055c-5a3d-40f4-beca-e845a414b1fd
+# ╟─c3c8f31b-9ed1-4b28-bfd0-f87ec389b8db
 # ╠═1b5098d4-9a38-4687-a259-339e8dc39037
-# ╟─75a7db34-d152-4720-a7c9-1cf2e7779108
+# ╠═75a7db34-d152-4720-a7c9-1cf2e7779108
 # ╠═5d53eb59-d611-43b0-8e82-d8f0bea2f091
-# ╟─534f9d8b-782d-4cc5-bf86-b15d63b9a1f8
-# ╠═e4b89483-6067-4609-b801-337c483e9c30
 # ╟─6cd4fad4-f873-4e23-b0e1-de2a7a4bf9fc
-# ╠═dae17a71-615d-4ef8-8bce-726971e29cd9
+# ╠═724fb2b2-0611-4f7f-8ccb-a87eea4f30bb
 # ╟─f8cc2efb-ff19-4c8f-bce1-e70915eee05a
-# ╠═1713dc62-c13e-4505-9b84-15880e860171
+# ╠═4ba47bfd-ac0f-4c36-8041-5de6c6340c76
+# ╟─2667ac0b-c94a-4d9c-be0c-cc54237bf6a9
+# ╠═a54df0d9-d7cc-493d-a83a-c86754d3e5d8
 # ╟─40cf450c-76e2-492d-a7a0-14a8e05fe033
-# ╠═220bbf25-4c7e-4150-ac1b-0f7df90a3915
+# ╠═3178628d-8558-47be-a7ac-1e74fa3eee5a
+# ╟─28424ef1-dc02-4ba4-b11f-1bece1e91499
+# ╠═a7ac75f8-9834-4cf7-bc30-6cd58d60c769
+# ╟─f6b1c226-b632-4a3d-a138-ac0a15d5ac66
+# ╠═787fad68-3259-4ca2-a0fb-f372694be2aa
+# ╟─a34ab926-15ad-414e-9558-158763a66a6f
+# ╠═aba756e2-c09f-49cd-a265-eee767d5fe31
+# ╠═7fac0358-44a7-4050-a356-618306115487
+# ╟─d6b48c67-b09a-44a5-970f-5111c3f07453
+# ╠═b0f09d8b-dba6-4712-8217-e67353588094
+# ╟─0404b71b-ef92-4950-b5c7-94cce17b2870
 # ╟─ef133164-bcde-4703-82dc-b5f2617b9364
-# ╠═461fc25d-a20a-4a6b-b4c4-fda5f1589aeb
-# ╟─2b86df11-8fa3-4ecf-b89d-6004757866e3
-# ╠═9892aeeb-4a4e-42a6-9c79-94f34dca1b2f
-# ╟─8729d6a8-fb40-42cf-8c03-7c9c1e4256d7
-# ╠═7bc26d17-2433-4d36-a723-dd2ad9e9a8c7
+# ╠═390c6c7d-cd27-4da8-982d-a92e35c83f1f
+# ╠═9a6dedbd-68cd-4f80-8595-a099c1f2dc28
 # ╟─1eca4129-917a-4373-a064-7cf64bdef17d
 # ╠═a73a45a0-2cfa-4692-afdf-2e1e7a8e0911
 # ╠═a5e82415-35b4-437f-845c-0bbd72d663c4
+# ╟─2b86df11-8fa3-4ecf-b89d-6004757866e3
+# ╟─8729d6a8-fb40-42cf-8c03-7c9c1e4256d7
+# ╠═c7eb4334-6a0d-4546-9148-27a53a5d3b8d
 # ╟─002784c3-a11f-439a-82be-6b01c69cff2b
 # ╠═73a5eedf-a945-4cb9-8635-233686b810bc
 # ╠═cf72d1a5-84c8-4963-8833-d1345510d2a3
-# ╠═288914f4-70d1-4c09-831a-fef131547b5a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
