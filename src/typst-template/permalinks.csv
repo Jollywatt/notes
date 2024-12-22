@@ -24,6 +24,7 @@ matrix-matrix-derivatives,https://jollywatt.github.io/notes/matrix-matrix-deriva
 maxwell-equations,https://jollywatt.github.io/notes/maxwell-equations
 mooncake-intro,https://jollywatt.github.io/notes/mooncake-intro
 multivector-calc-tests,https://jollywatt.github.io/notes/multivector-calc-tests
+overloading-autodiff,https://jollywatt.github.io/notes/overloading-autodiff
 partials,https://jollywatt.github.io/notes/partials
 poincare-half-plane,https://jollywatt.github.io/notes/poincare-half-plane
 poincare-plane-to-disk,https://jollywatt.github.io/notes/poincare-plane-to-disk
@@ -33,10 +34,10 @@ product-of-gaussians,https://jollywatt.github.io/notes/product-of-gaussians
 pushforward,https://jollywatt.github.io/notes/pushforward
 reverse-mode-inner-product,https://jollywatt.github.io/notes/reverse-mode-inner-product
 rotor-optimisation,https://jollywatt.github.io/notes/rotor-optimisation
-simple-overloading-autodiff,https://jollywatt.github.io/notes/simple-overloading-autodiff
-simple-tape-autodiff,https://jollywatt.github.io/notes/simple-tape-autodiff
 sta-identities,https://jollywatt.github.io/notes/sta-identities
 sta-without-signature,https://jollywatt.github.io/notes/sta-without-signature
+tape-autodiff,https://jollywatt.github.io/notes/tape-autodiff
 test,https://jollywatt.github.io/notes/test
+unified-autodiff,https://jollywatt.github.io/notes/unified-autodiff
 variance-of-sum,https://jollywatt.github.io/notes/variance-of-sum
 wagner-fischer-matrix,https://jollywatt.github.io/notes/wagner-fischer-matrix
