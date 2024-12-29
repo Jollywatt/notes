@@ -35,7 +35,7 @@ jobs:
         uses: actions/configure-pages@v5
       - uses: julia-actions/setup-julia@v2
         with:
-          version: '1.11'
+          version: "1.11"
       - name: Build site
         run: julia --project -e 'using ZettelkastenNotes; build()'
       - name: Upload artifact
