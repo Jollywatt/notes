@@ -4,15 +4,17 @@ import { render } from "preact-render-to-string"
 import { copySync } from "@std/fs"
 import { join as pathJoin } from "@std/path"
 
-const base = ({ head, body }) => (
+const pageTitle = (title: string) => <title>Joseph’s notes | {title}</title>
+
+const base = ({ title, head, body }) => (
 	<html>
 		<head>
 			<meta charSet="utf-8" />
 			<meta name="viewport" content="width=device-width, initial-scale=1" />
 			<link rel="stylesheet" href="./assets/style.css" />
 			<link rel="stylesheet" href="./assets/widgets.css" />
+			{pageTitle(title)}
 			{head}
-			<title>Joseph's notes | $title</title>
 		</head>
 		<body>
 			{body}
@@ -20,15 +22,15 @@ const base = ({ head, body }) => (
 	</html>
 )
 
-const json = (obj) => <pre>{JSON.stringify(obj, null, 2)}</pre>
-
 const copyrightFooter =
 	`<p xmlns:cc="http://creativecommons.org/ns#"><a rel="cc:attributionURL" href="https://github.com/Jollywatt/notes">This work</a> by <span property="cc:attributionName">Joseph Wilson</span> is licensed under <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">CC BY-NC-ND 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""/><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""/><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt=""/><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nd.svg?ref=chooser-v1" alt=""/></a></p>`
 const copyrightURL = "https://creativecommons.org/licenses/by-nc-nd/4.0/"
 
+/* Index page with table of contents */
+
 const indexPage = (tree: NoteFolder) =>
 	base({
-		head: <title>Index</title>,
+		head: <title>Joseph’s notes</title>,
 		body: (
 			<>
 				<img id="background" src="./assets/background.png" />
@@ -74,6 +76,8 @@ function toc(node: NoteFolder) {
 	)
 }
 
+/* Individual note pages */
+
 function headerContent(note: Note) {
 	let el = (
 		<>
@@ -91,10 +95,15 @@ function headerContent(note: Note) {
 
 const header = (note) => <div id="header">{headerContent(note)}</div>
 
+const json = (obj) => <pre>{JSON.stringify(obj, null, 2)}</pre>
+
 const defaultRenderer = (note) => {
-	console.warn(`%cUsing default renderer for note "${note.name}" of type "${note.type}"`, "color: yellow")
+	console.warn(
+		`%cUsing default renderer for note "${note.name}" of type "${note.type}"`,
+		"color: yellow",
+	)
 	return base({
-		head: <title>{note.name}</title>,
+		title: note.name,
 		body: (
 			<main>
 				{header(note)}
@@ -114,12 +123,8 @@ noteRenderers["markdown"] = async function (note) {
 		.replace(/@([-\w]+)/g, (handle, name) => `[${handle}](${name}.html)`)
 	const html = renderMarkdown(md)
 	return base({
-		head: (
-			<>
-				<title>{note.name}</title>
-				<style>{CSS}</style>
-			</>
-		),
+		title: note.name,
+		head: <style>{CSS}</style>,
 		body: (
 			<>
 				{header(note)}
@@ -138,7 +143,7 @@ noteRenderers["markdown"] = async function (note) {
 noteRenderers["plain text"] = async function (note: Note) {
 	const txt = await Deno.readTextFile(note.files.txt)
 	return base({
-		head: <title>{note.name}</title>,
+		title: note.name,
 		body: (
 			<>
 				{header(note)}
@@ -154,6 +159,7 @@ noteRenderers["pluto notebook"] = async function (note: Note) {
 	const html = await Deno.readTextFile(note.files.html)
 	const attachment = (
 		<>
+			{pageTitle(note.name)}
 			<link rel="stylesheet" href="/assets/widgets.css" />
 			<div className="zettel-floating-header">
 				{headerContent(note)}
@@ -167,7 +173,7 @@ function pdfRenderer(note: Note) {
 	const pdfFileName = `${note.name}.pdf`
 	Deno.copyFile(note.files.pdf, pathJoin("site", pdfFileName))
 	return base({
-		head: <title>{note.name}</title>,
+		title: note.name,
 		body: (
 			<>
 				{header(note)}
@@ -188,9 +194,9 @@ async function codeRenderer(
 ) {
 	const src = await Deno.readTextFile(note.files.jl)
 	return base({
+		title: note.name,
 		head: (
 			<>
-				<title>{note.name}</title>
 				<link rel="stylesheet" href="/assets/highlight/styles/default.css" />
 				<script src="/assets/highlight/highlight.min.js" />
 				<script>hljs.highlightAll();</script>
