@@ -1,4 +1,4 @@
-@import url('https://fonts.cdnfonts.com/css/linux-libertine-o');
+@import url("https://fonts.cdnfonts.com/css/linux-libertine-o");
 
 :root {
 	color-scheme: light dark;
@@ -8,7 +8,7 @@ html {
 	--header-size: 30px;
 	--pdf-background: #808080;
 	background: var(--pdf-background);
-	font-family: 'Linux Libertine O', sans-serif;
+	font-family: "Linux Libertine O", sans-serif;
 }
 
 html:has(object) {
@@ -20,16 +20,26 @@ html:has(.scroll) {
 }
 
 html:has(#toc) {
-	background: light-dark(wheat, #14141D);
-	color: light-dark(#14141D, wheat);
+	background: light-dark(wheat, #14141d);
+	color: light-dark(#14141d, wheat);
 }
 
-html:has(#toc) a:any-link { color: #978EBF; }
-html:has(#toc) a:visited { color: #715B9A; }
-html:has(#toc) a:active { color: light-dark(black, white); }
-html:has(#toc) a:hover { color: light-dark(black, white); }
+html:has(#toc) a:any-link {
+	color: #978ebf;
+}
+html:has(#toc) a:visited {
+	color: #715b9a;
+}
+html:has(#toc) a:active {
+	color: light-dark(black, white);
+}
+html:has(#toc) a:hover {
+	color: light-dark(black, white);
+}
 
-h1 a { color: inherit !important; }
+h1 a {
+	color: inherit !important;
+}
 
 #background {
 	position: fixed;
@@ -39,7 +49,7 @@ h1 a { color: inherit !important; }
 	width: calc(300px + 70vw);
 	opacity: 0.15;
 	z-index: -1000;
-	mask-image: linear-gradient(270deg, rgba(0,0,0,1), rgba(0,0,0,0));
+	mask-image: linear-gradient(270deg, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
 }
 
 @media (prefers-color-scheme: light) {
@@ -53,7 +63,6 @@ h1 a { color: inherit !important; }
 		filter: invert();
 	}
 }
-
 
 #background ~ h1 {
 	padding-top: 80px;

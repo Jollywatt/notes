@@ -18,7 +18,7 @@ pages (except for unavoidable CSS class name clashes).
 	border-radius: 5px;
 	--tabsize: 35px;
 	--r: 10px;
-	transition: .18s cubic-bezier(0, 0.03, 0.22, 0.93);
+	transition: 0.18s cubic-bezier(0, 0.03, 0.22, 0.93);
 }
 .zettel-side-menu.left {
 	left: 0;
@@ -38,8 +38,12 @@ pages (except for unavoidable CSS class name clashes).
 	position: relative;
 	padding: 15px;
 }
-.zettel-side-menu.left > div { padding-right: calc(var(--tabsize) + 2px); }
-.zettel-side-menu.right > div { padding-left: calc(var(--tabsize) + 2px); }
+.zettel-side-menu.left > div {
+	padding-right: calc(var(--tabsize) + 2px);
+}
+.zettel-side-menu.right > div {
+	padding-left: calc(var(--tabsize) + 2px);
+}
 
 .zettel-side-menu .tab {
 	position: absolute;
@@ -47,8 +51,12 @@ pages (except for unavoidable CSS class name clashes).
 	transform: translateY(-50%);
 	--icon-dist: 15px;
 }
-.zettel-side-menu .tab.right { right: var(--icon-dist); }
-.zettel-side-menu .tab.left { left: var(--icon-dist); }
+.zettel-side-menu .tab.right {
+	right: var(--icon-dist);
+}
+.zettel-side-menu .tab.left {
+	left: var(--icon-dist);
+}
 
 .zettel-side-menu li {
 	list-style: none;

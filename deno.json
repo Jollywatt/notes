@@ -1,7 +1,8 @@
 {
   "tasks": {
-    "build": "deno run -A main.js build",
-    "serve": "deno run -A main.js serve"
+    "build": "deno run -A src/main.js build",
+    "serve": "deno run --watch -A src/main.js serve",
+    "dev": "deno test --watch -A src/main.js",
   },
   "imports": {
     "zettelsite": "../zettelsite/src/main.ts",
@@ -20,7 +21,11 @@
   "compilerOptions": {
     "jsx": "precompile",
     "jsxImportSource": "preact",
-    "jsxImportSourceTypes": "@types/react",
     "noImplicitAny": false
+  },
+  "fmt": {
+    "include": ["src/"],
+    "useTabs": true,
+    "semiColons": false
   }
 }
