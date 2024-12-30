@@ -1,5 +1,6 @@
 import { Note, NoteFolder, Project } from "zettelsite"
 import { CSS, render as renderMarkdown } from "@deno/gfm"
+import { render } from "preact-render-to-string"
 import { copySync } from "@std/fs"
 import { join as pathJoin } from "@std/path"
 
@@ -21,8 +22,8 @@ const base = ({ head, body }) => (
 
 const json = (obj) => <pre>{JSON.stringify(obj, null, 2)}</pre>
 
-// deno-fmt-ignore
-const copyrightFooter = `<p xmlns:cc="http://creativecommons.org/ns#"><a rel="cc:attributionURL" href="https://github.com/Jollywatt/notes">This work</a> by <span property="cc:attributionName">Joseph Wilson</span> is licensed under <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">CC BY-NC-ND 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""/><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""/><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt=""/><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nd.svg?ref=chooser-v1" alt=""/></a></p>`
+const copyrightFooter =
+	`<p xmlns:cc="http://creativecommons.org/ns#"><a rel="cc:attributionURL" href="https://github.com/Jollywatt/notes">This work</a> by <span property="cc:attributionName">Joseph Wilson</span> is licensed under <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">CC BY-NC-ND 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""/><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""/><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt=""/><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nd.svg?ref=chooser-v1" alt=""/></a></p>`
 const copyrightURL = "https://creativecommons.org/licenses/by-nc-nd/4.0/"
 
 const indexPage = (tree: NoteFolder) =>
@@ -33,7 +34,7 @@ const indexPage = (tree: NoteFolder) =>
 				<img id="background" src="./assets/background.png" />
 				<div id="toc" className="pad">
 					<h1>
-						<a href="/">Joseph</a>’s notes V. III
+						<a href="/">Joseph</a>’s notes V. II
 					</h1>
 					<p>
 						Welcome to my Zettelkasten garden of notes. Here is where I put
@@ -74,10 +75,12 @@ function toc(node: NoteFolder) {
 }
 
 function headerContent(note: Note) {
-	let el = <>
-		<a href="/">Joseph’s notes</a> / {note.dir.map(a => `${a} / `)}
-		<span className="notelink">{note.name}</span>
-	</>
+	let el = (
+		<>
+			<a href="/">Joseph’s notes</a> / {note.dir.map((a) => `${a} / `)}
+			<span className="notelink">{note.name}</span>
+		</>
+	)
 	el = (
 		<>
 			{el} • <a href={copyrightURL}>&copy;</a>
@@ -86,14 +89,11 @@ function headerContent(note: Note) {
 	return el
 }
 
-const header = (note) => (
-	<div id="header">
-		{headerContent(note)}
-	</div>
-)
+const header = (note) => <div id="header">{headerContent(note)}</div>
 
-const defaultRenderer = (note) =>
-	base({
+const defaultRenderer = (note) => {
+	console.warn(`%cUsing default renderer for note "${note.name}" of type "${note.type}"`, "color: yellow")
+	return base({
 		head: <title>{note.name}</title>,
 		body: (
 			<main>
@@ -103,6 +103,7 @@ const defaultRenderer = (note) =>
 			</main>
 		),
 	})
+}
 
 const noteRenderers: { [noteType: string]: Function } = {}
 
@@ -134,7 +135,7 @@ noteRenderers["markdown"] = async function (note) {
 	})
 }
 
-noteRenderers["plain text"] = async function (note) {
+noteRenderers["plain text"] = async function (note: Note) {
 	const txt = await Deno.readTextFile(note.files.txt)
 	return base({
 		head: <title>{note.name}</title>,
@@ -148,6 +149,68 @@ noteRenderers["plain text"] = async function (note) {
 		),
 	})
 }
+
+noteRenderers["pluto notebook"] = async function (note: Note) {
+	const html = await Deno.readTextFile(note.files.html)
+	const attachment = (
+		<>
+			<link rel="stylesheet" href="/assets/widgets.css" />
+			<div className="zettel-floating-header">
+				{headerContent(note)}
+			</div>
+		</>
+	)
+	return `${html}\n${render(attachment)}`
+}
+
+function pdfRenderer(note: Note) {
+	const pdfFileName = `${note.name}.pdf`
+	Deno.copyFile(note.files.pdf, pathJoin("site", pdfFileName))
+	return base({
+		head: <title>{note.name}</title>,
+		body: (
+			<>
+				{header(note)}
+				<div id="content">
+					<object data={pdfFileName} type="application/pdf" />
+				</div>
+			</>
+		),
+	})
+}
+
+noteRenderers["typst pdf"] = pdfRenderer
+noteRenderers["latex pdf"] = pdfRenderer
+
+async function codeRenderer(
+	note: Note,
+	{ srcfile, lang }: { srcfile: string; lang: string },
+) {
+	const src = await Deno.readTextFile(note.files.jl)
+	return base({
+		head: (
+			<>
+				<title>{note.name}</title>
+				<link rel="stylesheet" href="/assets/highlight/styles/default.css" />
+				<script src="/assets/highlight/highlight.min.js" />
+				<script>hljs.highlightAll();</script>
+			</>
+		),
+		body: (
+			<>
+				{header(note)}
+				<div id="content">
+					<div className="scroll">
+						<pre><code className={`language-${lang}`}>{src}</code></pre>
+					</div>
+				</div>
+			</>
+		),
+	})
+}
+
+noteRenderers["julia code"] = (note) =>
+	codeRenderer(note, { srcfile: note.files.jl, lang: "julia" })
 
 export async function build(project: Project) {
 	const { notes, tree } = project.analyse()
