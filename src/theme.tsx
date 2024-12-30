@@ -6,7 +6,7 @@ import { join as pathJoin } from "@std/path"
 
 const pageTitle = (title: string) => <title>Joseph’s notes | {title}</title>
 
-const base = ({ title, head, body }) => (
+const base = ({ title, head, body }: { title: string, head?: any, body: any}) => (
 	<html>
 		<head>
 			<meta charSet="utf-8" />
@@ -30,7 +30,7 @@ const copyrightURL = "https://creativecommons.org/licenses/by-nc-nd/4.0/"
 
 const indexPage = (tree: NoteFolder) =>
 	base({
-		head: <title>Joseph’s notes</title>,
+		title: "Index",
 		body: (
 			<>
 				<img id="background" src="./assets/background.png" />
@@ -217,6 +217,20 @@ async function codeRenderer(
 
 noteRenderers["julia code"] = (note) =>
 	codeRenderer(note, { srcfile: note.files.jl, lang: "julia" })
+
+async function iframeRenderer(note: Note) {
+	const file = await Deno.readTextFile(note.files.url)
+	const link = file.match(/https?:.*/)[0]
+	return base({
+		title: note.name,
+		body: <>
+			<div id="wide-header">{headerContent(note)}</div>
+			<iframe class="page" src={link}></iframe>
+		</>
+	})
+}
+
+noteRenderers["external link"] = iframeRenderer
 
 export async function build(project: Project) {
 	const { notes, tree } = project.analyse()
