@@ -9,6 +9,25 @@
 
 #mooncake is a reverse-mode automatic differentiation framework for Julia which aims, in particular, to support mutation.
 
+== Notations
+
+If $x$ is a primal value, then $dot(x)$ is like $dif x$, and $overline(x)$ is like $diff/(diff x)$.
+
+Pushforward, or directional derivative:
+$
+DD f[x](dot(x)) := lim_(epsilon -> 0) (f(x + epsilon dot(x)) - f(x))/epsilon
+$
+Adjoint $A^*$ of a linear operator $A$:
+$
+ip(A(dot(x)), overline(y)) = ip(dot(x), A^*(overline(y)))
+$
+Define this inner product on the Hilbert space of "types", e.g., on tuples of numbers and vectors:
+$
+ip((x, arrow(u)), (y, arrow(v))) = x y + ip(arrow(u), arrow(v))
+$
+This just makes bookkeeping easier: we don't need to write all linear operators as matrices in order to find the adjoint.
+
+
 == Quick questions
 
 - Is forward mode supported? E.g., to differentiate $f : RR -> RR^N$ in one pass.
@@ -25,21 +44,3 @@
 - How does the choice of inner product affect things?
 
 
-
-== Notations
-
-If $x$ is a primal value, then $dot(x)$ is like $dif x$, and $overline(x)$ is like $diff/(diff x)$.
-
-Pushforward, or directional derivative:
-$
-DD f[x](dot(x)) := lim_(dot(x) -> 0) (abs(f(x + dot(x)) - f(x)))/abs(dot(x))
-$
-Adjoint $A^*$ of a linear operator $A$:
-$
-ip(A(dot(x)), overline(y)) = ip(dot(x), A^*(overline(y)))
-$
-Define this inner product on the Hilbert space of "types", e.g., on tuples of numbers and vectors:
-$
-ip((x, arrow(u)), (y, arrow(v))) = x y + ip(arrow(u), arrow(v))
-$
-This just makes bookkeeping easier: we don't need to write all linear operators as matrices in order to find the adjoint.

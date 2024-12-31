@@ -104,11 +104,6 @@ Suppose we have the function ``f(a, b) = a b + \sin(a)`` which we wish to differ
 md"""
 ### Forward mode
 
-Suppose we have the function ``f(a, b) = a b + \sin(a)`` which we wish to differentiate.
-"""
-
-# ╔═╡ 55ce1766-d7b9-4041-8ab4-7a35d361c549
-md"""
 The lifted version of this function is:
 """
 
@@ -191,12 +186,6 @@ dual(f) = function(x...)
 	Dual(y, ẏ)
 end
 
-# ╔═╡ a54df0d9-d7cc-493d-a83a-c86754d3e5d8
-function reverse_vars(values)
-	grads = zeros(length(values))
-	grads, [CoDual(v, t -> grads[i] += t) for (i, v) in enumerate(values)]
-end
-
 # ╔═╡ 7fac0358-44a7-4050-a356-618306115487
 cotangent(a, x) = ZeroTangent()
 
@@ -233,6 +222,45 @@ Base.sin(a::Dual) = dual(sin)(a)
 
 # ╔═╡ 9a6dedbd-68cd-4f80-8595-a099c1f2dc28
 Base.sin(a::CoDual) = codual(sin)(a)
+
+# ╔═╡ 1eca4129-917a-4373-a064-7cf64bdef17d
+md"""
+A simple macro can help with writing method definitions for many elementary functions:
+"""
+
+# ╔═╡ a73a45a0-2cfa-4692-afdf-2e1e7a8e0911
+macro lift(expr)
+	fn, args... = expr.args
+	varnames, types = zip(getfield.(args, :args)...)
+
+	stmts = Expr[]
+	for (dualtype, wrapper) in [:Dual => :dual, :CoDual => :codual]
+		if length(args) > 1
+			types′ = [:(Union{$dualtype{<:$T},$T}) for T in types]
+		else
+			types′ = [:($dualtype{<:$T}) for T in types]
+		end
+		sig = [:($var::$T) for (var, T) in zip(varnames, types′) ]
+		stmt = :( $fn($(sig...)) = $wrapper($fn)($(varnames...)) )
+		push!(stmts, stmt)
+	end
+	:(begin $(stmts...) end)
+end
+
+# ╔═╡ a5e82415-35b4-437f-845c-0bbd72d663c4
+begin
+	@lift Base.:+(a::Number, b::Number)
+	@lift Base.:-(a::Number)
+	@lift Base.:-(a::Number, b::Number)
+	@lift Base.:*(a::Number, b::Number)
+	@lift Base.:/(a::Number, b::Number)
+	@lift Base.exp(a::Number)
+	@lift Base.log(a::Number)
+	@lift Base.sqrt(a::Number)
+	@lift Base.sin(a::Number)
+	@lift Base.cos(a::Number)
+	@lift Base.:^(a::Number, b::Number)
+end
 
 # ╔═╡ 2f724018-2253-4676-92b9-0a192564453b
 ∂(sin, 4) ≈ cos(4)
@@ -289,49 +317,16 @@ f_codual(a, b) = let (+, *, sin) = codual.((+, *, sin))
 	a*b + sin(a)
 end
 
+# ╔═╡ a54df0d9-d7cc-493d-a83a-c86754d3e5d8
+function reverse_vars(values)
+	grads = zeros(length(values))
+	grads, [CoDual(v, t -> grads[i] += t) for (i, v) in enumerate(values)]
+end
+
 # ╔═╡ 3178628d-8558-47be-a7ac-1e74fa3eee5a
 let (grads, (a⃐, b⃐)) = reverse_vars([5, 3])
 	f_codual(a⃐, b⃐).back(1)
 	grads
-end
-
-# ╔═╡ 1eca4129-917a-4373-a064-7cf64bdef17d
-md"""
-A simple macro can help with writing method definitions for many elementary functions:
-"""
-
-# ╔═╡ a73a45a0-2cfa-4692-afdf-2e1e7a8e0911
-macro lift(expr)
-	fn, args... = expr.args
-	varnames, types = zip(getfield.(args, :args)...)
-
-	stmts = Expr[]
-	for (dualtype, wrapper) in [:Dual => :dual, :CoDual => :codual]
-		if length(args) > 1
-			types′ = [:(Union{$dualtype{<:$T},$T}) for T in types]
-		else
-			types′ = [:($dualtype{<:$T}) for T in types]
-		end
-		sig = [:($var::$T) for (var, T) in zip(varnames, types′) ]
-		stmt = :( $fn($(sig...)) = $wrapper($fn)($(varnames...)) )
-		push!(stmts, stmt)
-	end
-	:(begin $(stmts...) end)
-end
-
-# ╔═╡ a5e82415-35b4-437f-845c-0bbd72d663c4
-begin
-	@lift Base.:+(a::Number, b::Number)
-	@lift Base.:-(a::Number)
-	@lift Base.:-(a::Number, b::Number)
-	@lift Base.:*(a::Number, b::Number)
-	@lift Base.:/(a::Number, b::Number)
-	@lift Base.exp(a::Number)
-	@lift Base.log(a::Number)
-	@lift Base.sqrt(a::Number)
-	@lift Base.sin(a::Number)
-	@lift Base.cos(a::Number)
-	@lift Base.:^(a::Number, b::Number)
 end
 
 # ╔═╡ 2b86df11-8fa3-4ecf-b89d-6004757866e3
@@ -434,9 +429,8 @@ version = "1.11.0"
 # ╠═790f7252-7ee2-4e06-8373-1bbe5e891398
 # ╠═638f247b-4b09-4160-bcd1-e0f91faa38d2
 # ╟─651f93c1-2184-4374-82f3-2350e3672d48
-# ╟─61afbb00-95ce-45bb-9a58-01741df61cdf
 # ╠═087e447d-499b-423d-8846-8d555fb96b93
-# ╟─55ce1766-d7b9-4041-8ab4-7a35d361c549
+# ╟─61afbb00-95ce-45bb-9a58-01741df61cdf
 # ╠═c4ec055c-5a3d-40f4-beca-e845a414b1fd
 # ╟─c3c8f31b-9ed1-4b28-bfd0-f87ec389b8db
 # ╠═1b5098d4-9a38-4687-a259-339e8dc39037
