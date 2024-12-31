@@ -7,9 +7,19 @@ using InteractiveUtils
 # ╔═╡ de6606b3-55ee-4729-bcfe-65e5f54074ee
 using Test
 
+# ╔═╡ 33a9588e-414b-4bbd-931d-cd4508fafecb
+md"""
+# Hilbert spaces, adjoints, and automatic differentiation.
+
+This note aims to address some curiosities we have about reverse-mode autodiff and the concomitant theory involving adjoint operators.
+1. If reverse-mode [computes the _adjoint_](https://jollywatt.github.io/notes/reverse-mode-inner-product) of the derivative operator, what is this adjoint operation? What is its associated inner product?
+2. Given an inner product, can we derive adjoints of linear functions automatically?
+3. Can we change this inner product? What happens to reverse-mode derivative rules if we do?
+"""
+
 # ╔═╡ 197769f1-3f92-4665-bc57-04f0cd523ef4
 md"""
-# A universal inner product space
+## A universal inner product space
 
 We would like to turn every type (numbers, arrays, tuples, structs, and so on) into an _inner product_ or _Hilbert_ space, so that we can:
 - multiply any instance by a scalar;
@@ -25,7 +35,7 @@ Below is an implementation.
 begin
 	construct(::Type{<:Tuple}, fields) = Tuple(fields)
 	construct(T::Type{<:NamedTuple}, fields) = T(fields)
-	construct(T::Type, fields) = T(fields...)
+	construct(T::Type, fields) = T(fields...) 
 end
 
 # ╔═╡ fabfe2d4-3c92-44f0-88e1-e91f6b1334a0
@@ -77,7 +87,7 @@ end;
 
 # ╔═╡ 101df9af-1baa-4c7d-923a-28d8b21628df
 md"""
-## A standard basis for everything
+### A standard basis for everything
 
 It's very convenient if we can easily retrieve the standard basis vectors for an arbitrary type.
 
@@ -138,7 +148,7 @@ end
 
 # ╔═╡ 2d8f2983-007b-49ad-9e9c-d26acd6a6cea
 md"""
-## Deriving adjoints of linear functions
+### Deriving adjoints of linear functions
 
 Now that everything is a Hilbert space with a standard basis at hand, we can easily compute the adjoint of any linear function.
 
@@ -198,7 +208,7 @@ end
 
 # ╔═╡ 6d681664-2d25-44a1-98c8-c7767015d1e1
 md"""
-## Choosing different inner products
+### Choosing different inner products
 
 What happens if we form our Hilbert space with a different inner product? We get different adjoints.
 
@@ -439,6 +449,7 @@ version = "1.11.0"
 
 # ╔═╡ Cell order:
 # ╟─de6606b3-55ee-4729-bcfe-65e5f54074ee
+# ╟─33a9588e-414b-4bbd-931d-cd4508fafecb
 # ╟─197769f1-3f92-4665-bc57-04f0cd523ef4
 # ╠═d7ce956b-3b2c-4277-8873-59aa69ad5c61
 # ╠═fabfe2d4-3c92-44f0-88e1-e91f6b1334a0
