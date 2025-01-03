@@ -164,8 +164,18 @@ f^T(y) = \sum_{i} \frac{\langle f(e_i), y \rangle}{\langle e_i, e_i \rangle} e_i
 Our implementation of the adjoint `fᵀ = adj(f, X)` is with a higher-order function `adj` accepting a linear function `f(::X)` and its domain `X`.
 """
 
+# ╔═╡ 3b994eb0-23f3-4b47-8f1d-6e42757bd714
+function dualbasis(T; ip=ip)
+	es = basis(T)
+	A = [ip(eᵢ, eⱼ) for eᵢ in es, eⱼ in es]
+	[reduce(+̂, coeffs.*̂es) for coeffs in eachcol(inv(A))]
+end
+
 # ╔═╡ b9d094e1-d6ea-4818-90c6-27471622b0be
-adj(f, X; ip=ip) = y -> reduce(+̂, ip(f(eᵢ), y)ip(eᵢ, eᵢ)*̂eᵢ for eᵢ in basis(X))
+adj(f, X; ip=ip) = let e = basis(X), E = dualbasis(X; ip)
+	y -> reduce(+̂, ip(f(E[i]), y)*̂e[i] for i in dim(X))
+	# y -> reduce(+̂, ip(f(eᵢ), y)ip(eᵢ, eᵢ)*̂eᵢ for eᵢ in e)
+end
 
 # ╔═╡ 19816db5-8b0b-434c-a25a-4a3e10c4656b
 md"The inner product is passed as a keyword argument so we change it later..."
@@ -176,7 +186,7 @@ Here are some clasic examples:
 """
 
 # ╔═╡ b05995f4-78ca-4bd9-8032-5796ddcd6292
-adj(splat(+), Tuple{Int,Int})(7)
+adj(splat(+), Tuple{Float64,Float64})(7.0)
 
 # ╔═╡ 3a116278-8627-49e4-ae03-919be53cbd0f
 adj(t -> (t, t), Float64)((2.0, 0.5))
@@ -187,10 +197,15 @@ Here is a more complex example of a linear function ``A``:
 """
 
 # ╔═╡ 37aa86c4-68d4-487a-a7d1-091957600dfc
-A((r, p)::Pair{Int,Point{Int}}) = (-r, p.x + p.y)
+A((r, p)::Pair{Float64,Point{Float64}}) = (-r, p.x + p.y)
 
 # ╔═╡ e7edb93f-b106-4521-9900-eea6c9e56015
-Aᵀ = adj(A, Pair{Int,Point{Int}})
+Aᵀ = adj(A, Pair{Float64,Point{Float64}})
+
+# ╔═╡ 702d6210-e54c-4c5b-b3db-5c080a180947
+for x in basis(Pair{Float64,Point{Float64}}), y in basis(Tuple{Float64,Float64})
+	@test ip(A(x), y) === ip(x, Aᵀ(y))
+end
 
 # ╔═╡ c9121d8a-1092-4351-b9fd-8cc068f70f32
 md"""
@@ -201,10 +216,11 @@ We can verify its adjoint ``A^T`` is correct by checking that
 for all linearly independent ``x`` and ``y``.
 """
 
-# ╔═╡ 702d6210-e54c-4c5b-b3db-5c080a180947
-for x in basis(Pair{Int,Point{Int}}), y in basis(Tuple{Int,Int})
-	@test ip(A(x), y) === ip(x, Aᵀ(y))
-end
+# ╔═╡ e4a7572c-513b-411d-a00c-2544522118ef
+A(1 => Point(3, 4))
+
+# ╔═╡ ef0a9f55-2d48-4b54-82d6-4770703762e6
+Aᵀ((-1, 7))
 
 # ╔═╡ 6d681664-2d25-44a1-98c8-c7767015d1e1
 md"""
@@ -218,8 +234,71 @@ Let's make a second inner product that differs for the `Tuple` types: the first 
 # ╔═╡ 492fa9b1-910d-4bf5-af1d-6471fa56338d
 ip′(a, b) = ip(a, b)
 
+# ╔═╡ 13fca4dd-8e79-44b4-85bf-df7aee2b2703
+ip′((a1, a2)::Pair, (b1, b2)::Pair) = a1*b1 - a2*b2
+
+# ╔═╡ 40de03c0-ece5-4159-8c47-1aa12669bf53
+let T = Pair{Float64,Float64}
+	e, E = basis(T), dualbasis(T, ip=ip′)
+	ip′.(e, permutedims(E))
+end
+
 # ╔═╡ c5a160ee-3e77-4252-a42f-ceddf467cc71
-ip′((a1, a...)::T, (b1, b...)::T) where T<:Tuple = -a1*b1 + ip(a, b)
+#ip′((a1, a...)::T, (b1, b...)::T) where T<:Tuple = -a1*b1 + ip(a, b)
+
+# ╔═╡ 5252ae96-fb57-4224-9e4c-57e066b56c20
+function test_ip(ip, X)
+	es = basis(X)
+	for x in es, y in es, z in es
+		@test ip(x, x) != 0
+		@test ip(x, y) === ip(y, x)
+		for λ in (-1, 0, 1, 5)
+			@test ip(λ*̂x, y) === λ*ip(x, y) === ip(x, λ*̂y)
+		end
+		@test ip(x +̂ y, z) === ip(x, z) + ip(y, z)
+		@test ip(x, y +̂ z) === ip(x, y) + ip(x, z)
+	end
+	a = reduce(+̂, rand(-5:5, length(es)).*̂es)
+	@test a === reduce(+̂, ip(a, eᵢ)/ip(eᵢ, eᵢ)*̂eᵢ for eᵢ in es)
+end
+
+# ╔═╡ 35259a09-4d5a-4058-a948-40b74605330e
+test_ip(ip, Pair{Int,Int})
+
+# ╔═╡ 2fb86b25-53c8-4bac-825e-aea7433ebd25
+ip((1 => 2) +̂ (3 => 4), 3 => 8)
+
+# ╔═╡ 4d78c6a3-4289-498a-bfe9-745fef91c00a
+ip(1 => 2, 3 => 8) + ip(3 => 4, 3 => 8)
+
+# ╔═╡ 4522554c-03e5-449d-8351-92c17c02513c
+for b = basis(Pair{Float64,Float64})
+	@show b, ip′(b, b)
+end
+
+# ╔═╡ fae595dd-1c85-4ddf-9b6a-27459b27e215
+f((a, b)) = (a, b)
+
+# ╔═╡ bc9d8ba9-942d-449e-bdab-51cc3eb8fc11
+ip′(1 => 2, adj(f, Pair{Int,Int}, ip=ip′)((1, 20)))
+
+# ╔═╡ a284b945-b247-4cfe-b902-f5527ea67e3f
+ip′((0, 20), (0, 20))
+
+# ╔═╡ 050b3d9f-0315-40d2-967d-ab7dbad7fb61
+ip′(f(1 => 2), (1, 20))
+
+# ╔═╡ 418a5291-7d77-4941-847a-e22cfe8ad206
+let A = ((a, b),) -> (a, b, b), B = adj(A, Pair{Float64,Float64}; ip=ip′)
+	for x in basis(Pair{Float64,Float64}), y in basis(NTuple{3,Float64})
+		@test ip′(A(x), y) === ip′(x, B(y))
+	end
+end
+
+# ╔═╡ c4c3e479-2530-4143-a020-7fde5dc49e1f
+let A = ((a, b),) -> (a, b, a - b)
+	A(1=>0)
+end
 
 # ╔═╡ 2ed7d077-092b-4a95-a070-fdf0c341a00b
 md"""
@@ -469,7 +548,10 @@ version = "1.11.0"
 # ╠═180ae0be-4400-4daf-85c7-7ac92f528139
 # ╠═406ebb2c-c3fa-451b-8231-b5538f552982
 # ╟─2d8f2983-007b-49ad-9e9c-d26acd6a6cea
+# ╠═3b994eb0-23f3-4b47-8f1d-6e42757bd714
+# ╠═40de03c0-ece5-4159-8c47-1aa12669bf53
 # ╠═b9d094e1-d6ea-4818-90c6-27471622b0be
+# ╠═702d6210-e54c-4c5b-b3db-5c080a180947
 # ╟─19816db5-8b0b-434c-a25a-4a3e10c4656b
 # ╟─47a13810-c49c-4df7-b5e8-9dd3f57ad069
 # ╠═b05995f4-78ca-4bd9-8032-5796ddcd6292
@@ -478,10 +560,23 @@ version = "1.11.0"
 # ╠═37aa86c4-68d4-487a-a7d1-091957600dfc
 # ╠═e7edb93f-b106-4521-9900-eea6c9e56015
 # ╟─c9121d8a-1092-4351-b9fd-8cc068f70f32
-# ╠═702d6210-e54c-4c5b-b3db-5c080a180947
+# ╠═e4a7572c-513b-411d-a00c-2544522118ef
+# ╠═ef0a9f55-2d48-4b54-82d6-4770703762e6
 # ╟─6d681664-2d25-44a1-98c8-c7767015d1e1
 # ╠═492fa9b1-910d-4bf5-af1d-6471fa56338d
+# ╠═13fca4dd-8e79-44b4-85bf-df7aee2b2703
 # ╠═c5a160ee-3e77-4252-a42f-ceddf467cc71
+# ╠═5252ae96-fb57-4224-9e4c-57e066b56c20
+# ╠═35259a09-4d5a-4058-a948-40b74605330e
+# ╠═2fb86b25-53c8-4bac-825e-aea7433ebd25
+# ╠═4d78c6a3-4289-498a-bfe9-745fef91c00a
+# ╠═4522554c-03e5-449d-8351-92c17c02513c
+# ╠═fae595dd-1c85-4ddf-9b6a-27459b27e215
+# ╠═bc9d8ba9-942d-449e-bdab-51cc3eb8fc11
+# ╠═a284b945-b247-4cfe-b902-f5527ea67e3f
+# ╠═050b3d9f-0315-40d2-967d-ab7dbad7fb61
+# ╠═418a5291-7d77-4941-847a-e22cfe8ad206
+# ╠═c4c3e479-2530-4143-a020-7fde5dc49e1f
 # ╟─2ed7d077-092b-4a95-a070-fdf0c341a00b
 # ╠═126792d4-aab1-4c6d-80e4-edcff03816f9
 # ╠═4e6208dd-3d3f-4bc5-9545-c5bd554b4691
