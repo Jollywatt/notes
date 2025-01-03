@@ -132,7 +132,6 @@ li:has(ul) {
 	margin: 5pt 0;
 }
 
-
 iframe {
 	border: none;
 	display: block;
@@ -145,10 +144,10 @@ iframe {
 	padding: 5px;
 	border-radius: 0 0 5pt 0;
 	color: white !important;
-	background: #2A2A2A;
+	background: #2a2a2a;
 	box-shadow: 0 0 5pt #0005;
 	z-index: 10000;
 }
 #wide-header a {
-	color: white
+	color: white;
 }
