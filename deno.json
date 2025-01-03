@@ -5,7 +5,7 @@
     "dev": "deno test --watch -A src/main.js",
   },
   "imports": {
-    "zettelsite": "../zettelsite/src/main.ts",
+    "zettelsite": "../../zettelsite/src/main.ts",
     "@std/assert": "jsr:@std/assert@1",
     "browser-sync": "npm:browser-sync@^3.0.3",
     "@deno/gfm": "jsr:@deno/gfm@^0.10.0",
