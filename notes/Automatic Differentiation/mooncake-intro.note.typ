@@ -5,6 +5,11 @@
 
 #let ip(left, right) = $lr(angle.l left, right angle.r)$
 
+#let eqnum(it) = {
+	set math.equation(numbering: "(1)")
+	it
+}
+
 = Understanding #mooncake
 
 #mooncake is a reverse-mode automatic differentiation framework for Julia which aims, in particular, to support mutation.
@@ -13,10 +18,29 @@
 
 If $x$ is a primal value, then $dot(x)$ is like $dif x$, and $overline(x)$ is like $diff/(diff x)$.
 
-Pushforward, or directional derivative:
-$
+=== Pushforward, or directional derivative
+
+Let $f : X -> Y$ be a function between normed spaces $(X, ||dot.c||_X)$ and $(Y, ||dot.c||_Y)$.
+
+The directional derivative of $f$ at $x$ in the direction $dot(x)$ is
+#eqnum[$
 DD f[x](dot(x)) := lim_(epsilon -> 0) (f(x + epsilon dot(x)) - f(x))/epsilon
+$]
+where the limit of a function $h : RR -> Y$ is understood as to mean:
 $
+lim_(epsilon -> 0) h(epsilon) = h_0 <==> lim_(epsilon -> 0) ||h(epsilon) - h_0||_Y = 0
+$
+You may prefer to write this as a Fréchet derivative:
+$
+lim_(||dot(x)||_X -> 0) (||f(x + dot(x)) - f(x) - DD f[x](dot(x))||_Y)/(||dot(x)||_X) = 0
+$
+Or in Landau notation:
+$
+f(x + dot(x)) = f(x) + DD f[x](dot(x)) + cal(O)(dot(x))
+$
+
+=== Adjoints of linear operators
+
 Adjoint $A^*$ of a linear operator $A$:
 $
 ip(A(dot(x)), overline(y)) = ip(dot(x), A^*(overline(y)))
