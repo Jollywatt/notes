@@ -1,18 +1,23 @@
 import { Minimal, Project } from "zettelsite"
-import { build } from "./theme.tsx"
+import {
+	build,
+	ExternalURLNote,
+	JuliaCodeNote,
+	LaTeXNote,
+	PlutoNotebookNote,
+	TypstNote,
+} from "./theme.tsx"
 
 const project = new Project({
 	srcdir: "notes/",
 	sitedir: "site/",
-	noteTypes: {
-		"markdown": ["md"],
-		"typst pdf": ["typ", "pdf"],
-		"latex pdf": ["tex", "pdf"],
-		"pluto notebook": ["jl", "html"],
-		"julia code": ["jl"],
-		"plain text": ["txt"],
-		"external link": ["url"],
-	},
+	noteTypes: [
+		TypstNote,
+		LaTeXNote,
+		JuliaCodeNote,
+		PlutoNotebookNote,
+		ExternalURLNote,
+	],
 	builder: build,
 })
 

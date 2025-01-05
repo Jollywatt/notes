@@ -68,7 +68,7 @@ const tocEntry = (note: Note) => (
 		<a className="notelink" href={`${note.name}`}>
 			[{note.name}]
 		</a>{" "}
-		<span style={{ fontSize: "80%" }}>{note.type}</span>
+		<span style={{ fontSize: "80%" }}>{note.description}</span>
 	</li>
 )
 
@@ -111,65 +111,40 @@ const json = (obj) => <pre>{JSON.stringify(obj, null, 2)}</pre>
 
 const defaultRenderer = (note) => {
 	console.warn(
-		`%cUsing default renderer for note "${note.name}" of type "${note.type}"`,
+		`%cUsing default renderer for note "${note.name}" of type "${note.description}"`,
 		"color: yellow",
 	)
 	return (
 		<NotePage note={note}>
 			<main>
-				No renderer is defined for note type <code>{note.type}</code>.
+				No renderer is defined for note type <code>{note.description}</code>.
 				<pre>{JSON.stringify(note, null, 2)}</pre>
 			</main>
 		</NotePage>
 	)
 }
 
-const noteRenderers: { [noteType: string]: Function } = {}
 
-noteRenderers["markdown"] = (note) => {
-	let md = note.files.md.content
-		.replace(/\(@([-\w]+)\)/g, (_, name) => `(${name}.html)`)
-		.replace(/@([-\w]+)/g, (handle, name) => `[${handle}](${name}.html)`)
-	const html = renderMarkdown(md)
-	return (
-		<NotePage note={note} head={<style>{CSS}</style>}>
-			<pre>{md}</pre>
-			<pre>{html}</pre>
-			<main
-				dangerouslySetInnerHTML={{ __html: html }}
-				className="markdown-body"
-			>
-			</main>
-		</NotePage>
-	)
+export class PlutoNotebookNote extends Note {
+	static override extensionCombo = ["jl", "html"]
+	static override description = "pluto notebook"
+
+	override render() {
+		const html = this.files.html.content
+		const attachment = (
+			<>
+				{pageTitle(this.name)}
+				<link rel="stylesheet" href="/assets/widgets.css" />
+				<div className="zettel-floating-header">
+					{headerContent(this)}
+				</div>
+			</>
+		)
+		return `${html}\n${render(attachment)}`
+	}
 }
 
-noteRenderers["plain text"] = (note: Note) => {
-	const txt = note.files.txt.content
-	return (
-		<NotePage note={note}>
-			<main>
-				<pre>{txt}</pre>
-			</main>
-		</NotePage>
-	)
-}
-
-noteRenderers["pluto notebook"] = (note: Note) => {
-	const html = note.files.html.content
-	const attachment = (
-		<>
-			{pageTitle(note.name)}
-			<link rel="stylesheet" href="/assets/widgets.css" />
-			<div className="zettel-floating-header">
-				{headerContent(note)}
-			</div>
-		</>
-	)
-	return `${html}\n${render(attachment)}`
-}
-
-function pdfRenderer(note: Note) {
+function renderPDFPage(note: Note) {
 	const pdfFileName = `${note.name}.pdf`
 	Deno.copyFile(note.files.pdf.path, pathJoin("site", pdfFileName))
 	return (
@@ -181,14 +156,37 @@ function pdfRenderer(note: Note) {
 	)
 }
 
-noteRenderers["typst pdf"] = pdfRenderer
-noteRenderers["latex pdf"] = pdfRenderer
+export class TypstNote extends Note {
+	static override extensionCombo = ["typ", "pdf"]
+	static override description = "typst pdf"
+
+	override extractRefs() {
+		const refs: Array<string> = []
+		for (const m in this.files.typ.content.matchAll(/@([-\w]+)/g)) {
+			refs.push(m[1])
+		}
+		return new Set(refs)
+	}
+
+	override render() {
+		return renderPDFPage(this)
+	}
+}
+
+export class LaTeXNote extends Note {
+	static override extensionCombo = ["tex", "pdf"]
+	static override description = "latex pdf"
+
+	override render() {
+		return renderPDFPage(this)
+	}
+}
 
 function codeRenderer(
 	note: Note,
-	{ srcfile, lang }: { srcfile: string; lang: string },
+	{ srcfile, lang }: { srcfile; lang: string },
 ) {
-	const src = note.files.jl.content
+	const src = srcfile.content
 	return (
 		<NotePage
 			note={note}
@@ -209,29 +207,45 @@ function codeRenderer(
 	)
 }
 
-noteRenderers["julia code"] = (note) =>
-	codeRenderer(note, { srcfile: note.files.jl, lang: "julia" })
+export class JuliaCodeNote extends Note {
+	static override extensionCombo = ["jl"]
 
-function iframeRenderer(note: Note) {
-	const match = note.files.url.content.match(/https?:.*/)
-	if (match === null) {
-		return console.error(
-			`%cError:%c Couldn't parse URL in ${note.files.url.path}.`,
-			"color: red",
-			"",
-		)
+	override render() {
+		return codeRenderer(this, {
+			srcfile: this.files.jl,
+			lang: "julia",
+		})
 	}
-
-	const link = match[0]
-	return (
-		<NotePage note={note}>
-			<div id="wide-header">{headerContent(note)}</div>
-			<iframe class="page" src={link}></iframe>
-		</NotePage>
-	)
 }
 
-noteRenderers["external link"] = iframeRenderer
+export class ExternalURLNote extends Note {
+	static override extensionCombo = ["url"]
+
+	override get description() {
+		return `${this.url.host} link`
+	}
+
+	#url: URL | null = null
+	get url(): URL {
+		if (this.#url === null) {
+			const match = this.files.url.content.match(/https?:.*/)
+			if (match === null) {
+				throw new Error(`Couldn't parse URL in ${this.files.url.path}.`)
+			}
+			this.#url = new URL(match[0])
+		}
+		return this.#url
+	}
+
+	override render() {
+		return (
+			<Base title={this.name}>
+				<div id="wide-header">{headerContent(this)}</div>
+				<iframe class="page" src={this.url.href}></iframe>
+			</Base>
+		)
+	}
+}
 
 export async function build(project: Project) {
 	const { notes, tree } = project.analyse()
@@ -240,9 +254,7 @@ export async function build(project: Project) {
 	copySync("src/assets", pathJoin(project.sitedir, "assets"))
 
 	for (const name in notes) {
-		const note: Note = notes[name]
-		const renderer = noteRenderers[note.type ?? "unknown"] ?? defaultRenderer
-		const html = await renderer(note)
+		const html = notes[name].render()
 		project.renderPage(`${name}.html`, html)
 	}
 }

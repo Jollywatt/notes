@@ -3,6 +3,7 @@
     "build": "deno run -A src/main.js build",
     "serve": "deno run --watch -A src/main.js serve",
     "dev": "deno test --watch -A src/main.js",
+    // "serve": "deno run -A npm:browser-sync start --server site/ --watch"
   },
   "imports": {
     "zettelsite": "../../zettelsite/src/main.ts",

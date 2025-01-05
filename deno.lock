@@ -9,6 +9,7 @@
     "jsr:@std/path@^1.0.8": "1.0.8",
     "npm:@types/node@*": "22.5.4",
     "npm:@types/react@^19.0.2": "19.0.2",
+    "npm:browser-sync@*": "3.0.3",
     "npm:browser-sync@^3.0.3": "3.0.3",
     "npm:github-slugger@2": "2.0.0",
     "npm:he@^1.2.0": "1.2.0",
