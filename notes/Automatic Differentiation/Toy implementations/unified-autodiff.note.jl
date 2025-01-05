@@ -16,7 +16,7 @@ md"""
 
 This notebook points out the similarities of forward- and reverse-mode automatic differentiation by implementing them both with a single functorial construction.
 
-Compare this to the [implementation using dual and codual numbers](https://jollywatt.github.io/notes/simple-overloading-autodiff).
+Compare this to the [implementation using dual and codual numbers](https://jollywatt.github.io/notes/overloading-autodiff).
 """
 
 # ╔═╡ 8325cac2-950e-4d2b-955b-c57a47126ab6

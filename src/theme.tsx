@@ -31,6 +31,7 @@ function NotePage({ note, children, head = <></> }) {
 		<Base title={note.name} head={head}>
 			<NoteHeader note={note} />
 			<main>{children}</main>
+			<CrossrefTabs note={note} />
 		</Base>
 	)
 }
@@ -63,11 +64,17 @@ const indexPage = (tree: NoteFolder) => (
 	</Base>
 )
 
-const tocEntry = (note: Note) => (
-	<li>
+function NoteLink({ note }: { note: Note }) {
+	return (
 		<a className="notelink" href={`${note.name}`}>
 			[{note.name}]
-		</a>{" "}
+		</a>
+	)
+}
+
+const tocEntry = (note: Note) => (
+	<li>
+		<NoteLink note={note} />{" "}
 		<span style={{ fontSize: "80%" }}>{note.description}</span>
 	</li>
 )
@@ -85,6 +92,38 @@ function TableOfContents({ tree }: { tree: NoteFolder }) {
 				</li>
 			))}
 		</ul>
+	)
+}
+
+function CrossrefTabs({ note }: { note: Note }) {
+	const incoming = note.refs.incoming.map((note) => <NoteLink note={note} />)
+	const outgoing = note.refs.outgoing.map((note) => <NoteLink note={note} />)
+
+	return (
+		<>
+			{incoming.length
+				? (
+					<div class="zettel-side-menu left">
+						<div>
+							<li>Linking to here:</li>
+							{incoming}
+							<span class="tab right">⟩</span>
+						</div>
+					</div>
+				)
+				: null}
+			{outgoing.length
+				? (
+					<div class="zettel-side-menu right">
+						<div>
+							<li>Linking from here:</li>
+							{outgoing}
+							<span class="tab left">⟩</span>
+						</div>
+					</div>
+				)
+				: null}
+		</>
 	)
 }
 
@@ -109,25 +148,17 @@ const NoteHeader = ({ note }) => <div id="header">{headerContent(note)}</div>
 
 const json = (obj) => <pre>{JSON.stringify(obj, null, 2)}</pre>
 
-const defaultRenderer = (note) => {
-	console.warn(
-		`%cUsing default renderer for note "${note.name}" of type "${note.description}"`,
-		"color: yellow",
-	)
-	return (
-		<NotePage note={note}>
-			<main>
-				No renderer is defined for note type <code>{note.description}</code>.
-				<pre>{JSON.stringify(note, null, 2)}</pre>
-			</main>
-		</NotePage>
-	)
-}
-
-
 export class PlutoNotebookNote extends Note {
 	static override extensionCombo = ["jl", "html"]
 	static override description = "pluto notebook"
+
+	override extractRefs(allNames: Set<string>) {
+		return new Set(
+			this.files.jl.content.matchAll(
+				/jollywatt\.github\.io\/notes\/([-\w]+)/g,
+			).map((match) => match[1])
+		)
+	}
 
 	override render() {
 		const html = this.files.html.content
@@ -160,12 +191,10 @@ export class TypstNote extends Note {
 	static override extensionCombo = ["typ", "pdf"]
 	static override description = "typst pdf"
 
-	override extractRefs() {
-		const refs: Array<string> = []
-		for (const m in this.files.typ.content.matchAll(/@([-\w]+)/g)) {
-			refs.push(m[1])
-		}
-		return new Set(refs)
+	override extractRefs(allNames: Set<string>) {
+		return new Set(
+			this.files.typ.content.matchAll(/@([-\w]+)/g).map((match) => match[1]),
+		).intersection(allNames)
 	}
 
 	override render() {
@@ -248,7 +277,7 @@ export class ExternalURLNote extends Note {
 }
 
 export async function build(project: Project) {
-	const { notes, tree } = project.analyse()
+	const { notes, tree, refs } = project.analyse()
 	project.renderPage("index.html", indexPage(tree))
 
 	copySync("src/assets", pathJoin(project.sitedir, "assets"))
