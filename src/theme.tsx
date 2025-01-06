@@ -9,6 +9,18 @@ const pageTitle = (title: string) => <title>Joseph’s notes | {title}</title>
 const root = "/notes"
 const site = "https://jollywatt.github.io/"
 
+const clientReloadScript = `
+const ws = new WebSocket("ws://"+location.host)
+ws.onmessage = (msg) => {
+	if (msg.data === "reload") {
+		location.reload()
+	}
+}
+`
+const AutoReloadScript = () => (
+	<script dangerouslySetInnerHTML={{ __html: clientReloadScript }} />
+)
+
 function Base(
 	{ title, head, children }: { title: string; head?: any; children: any },
 ) {
@@ -19,6 +31,7 @@ function Base(
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				<link rel="stylesheet" href={pathJoin(root, "assets/style.css")} />
 				<link rel="stylesheet" href={pathJoin(root, "assets/widgets.css")} />
+				<AutoReloadScript />
 				{pageTitle(title)}
 				{head}
 			</head>
