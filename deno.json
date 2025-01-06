@@ -6,7 +6,7 @@
     // "serve": "deno run -A npm:browser-sync start --server site/ --watch"
   },
   "imports": {
-    "zettelsite": "../../zettelsite/src/main.ts",
+    "zettelbuilder": "../../zettelbuilder/src/main.ts",
     "@std/assert": "jsr:@std/assert@1",
     "browser-sync": "npm:browser-sync@^3.0.3",
     "@deno/gfm": "jsr:@deno/gfm@^0.10.0",

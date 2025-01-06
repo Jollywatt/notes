@@ -1,10 +1,12 @@
-import { Note, NoteFolder, Project } from "zettelsite"
+import { Note, NoteFolder, Project } from "zettelbuilder"
 import { CSS, render as renderMarkdown } from "@deno/gfm"
 import { render } from "preact-render-to-string"
 import { copySync } from "@std/fs"
 import { join as pathJoin } from "@std/path"
 
 const pageTitle = (title: string) => <title>Joseph’s notes | {title}</title>
+
+const root = "/notes"
 
 function Base(
 	{ title, head, children }: { title: string; head?: any; children: any },
@@ -14,8 +16,8 @@ function Base(
 			<head>
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
-				<link rel="stylesheet" href="./assets/style.css" />
-				<link rel="stylesheet" href="./assets/widgets.css" />
+				<link rel="stylesheet" href={pathJoin(root, "assets/style.css")} />
+				<link rel="stylesheet" href={pathJoin(root, "assets/widgets.css")} />
 				{pageTitle(title)}
 				{head}
 			</head>
@@ -45,9 +47,9 @@ const copyrightURL = "https://creativecommons.org/licenses/by-nc-nd/4.0/"
 
 /* Index page with table of contents */
 
-const indexPage = (tree: NoteFolder) => (
+const indexPage = (project: Project) => (
 	<Base title={"Index"}>
-		<img id="background" src="./assets/background.png" />
+		<img id="background" src={pathJoin(root, "assets/background.png")} />
 		<div id="toc" className="pad">
 			<h1>
 				<a href="/">Joseph</a>’s notes V. II
@@ -57,7 +59,7 @@ const indexPage = (tree: NoteFolder) => (
 				and notes from my research and coursework.
 			</p>
 
-			<TableOfContents tree={tree} />
+			<TableOfContents tree={project.analysis.tree} />
 
 			<CopyrightFooter />
 		</div>
@@ -66,7 +68,7 @@ const indexPage = (tree: NoteFolder) => (
 
 function NoteLink({ note }: { note: Note }) {
 	return (
-		<a className="notelink" href={`${note.name}`}>
+		<a className="notelink" href={pathJoin(root, note.name)}>
 			[{note.name}]
 		</a>
 	)
@@ -132,7 +134,7 @@ function CrossrefTabs({ note }: { note: Note }) {
 function headerContent(note: Note) {
 	let el = (
 		<>
-			<a href="/">Joseph’s notes</a> / {note.dir.map((a) => `${a} / `)}
+			<a href={root}>Joseph’s notes</a> / {note.dir.map((a) => `${a} / `)}
 			<span className="notelink">{note.name}</span>
 		</>
 	)
@@ -165,7 +167,7 @@ export class PlutoNotebookNote extends Note {
 		const attachment = (
 			<>
 				{pageTitle(this.name)}
-				<link rel="stylesheet" href="/assets/widgets.css" />
+				<link rel="stylesheet" href={pathJoin(root, "assets/widgets.css")} />
 				<div className="zettel-floating-header">
 					{headerContent(this)}
 				</div>
@@ -221,8 +223,8 @@ function codeRenderer(
 			note={note}
 			head={
 				<>
-					<link rel="stylesheet" href="/assets/highlight/styles/default.css" />
-					<script src="/assets/highlight/highlight.min.js" />
+					<link rel="stylesheet" href={pathJoin(root, "assets/highlight/styles/default.css")} />
+					<script src={pathJoin(root, "assets/highlight/highlight.min.js")} />
 					<script>hljs.highlightAll();</script>
 				</>
 			}
@@ -278,9 +280,9 @@ export class ExternalURLNote extends Note {
 
 export async function build(project: Project) {
 	const { notes, tree, refs } = project.analyse()
-	project.renderPage("index.html", indexPage(tree))
+	project.renderPage("index.html", indexPage(project))
 
-	copySync("src/assets", pathJoin(project.sitedir, "assets"))
+	copySync("src/assets", pathJoin(project.buildDir, "assets"))
 
 	for (const name in notes) {
 		const html = notes[name].render()

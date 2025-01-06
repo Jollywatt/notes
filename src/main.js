@@ -1,4 +1,4 @@
-import { Minimal, Project } from "zettelsite"
+import { Minimal, Project } from "zettelbuilder"
 import {
 	build,
 	ExternalURLNote,
@@ -9,8 +9,9 @@ import {
 } from "./theme.tsx"
 
 const project = new Project({
-	srcdir: "notes/",
-	sitedir: "site/",
+	srcDir: "notes/",
+	urlRoot: "notes",
+	buildDir: "site/",
 	noteTypes: [
 		TypstNote,
 		LaTeXNote,
@@ -27,4 +28,6 @@ if (command === "build") project.build()
 else if (command === "serve") {
 	project.build()
 	project.serve()
+} else {
+	project.build()
 }
