@@ -7,6 +7,7 @@ import { join as pathJoin } from "@std/path"
 const pageTitle = (title: string) => <title>Joseph’s notes | {title}</title>
 
 const root = "/notes"
+const site = "https://jollywatt.github.io/"
 
 function Base(
 	{ title, head, children }: { title: string; head?: any; children: any },
@@ -158,7 +159,7 @@ export class PlutoNotebookNote extends Note {
 		return new Set(
 			this.files.jl.content.matchAll(
 				/jollywatt\.github\.io\/notes\/([-\w]+)/g,
-			).map((match) => match[1])
+			).map((match) => match[1]),
 		)
 	}
 
@@ -223,7 +224,10 @@ function codeRenderer(
 			note={note}
 			head={
 				<>
-					<link rel="stylesheet" href={pathJoin(root, "assets/highlight/styles/default.css")} />
+					<link
+						rel="stylesheet"
+						href={pathJoin(root, "assets/highlight/styles/default.css")}
+					/>
 					<script src={pathJoin(root, "assets/highlight/highlight.min.js")} />
 					<script>hljs.highlightAll();</script>
 				</>
@@ -278,6 +282,14 @@ export class ExternalURLNote extends Note {
 	}
 }
 
+function exportPermalinksCSV(noteNames: string[]) {
+	const prefix = pathJoin(site, root)
+	let csv = noteNames.map((name) => {
+		return [name, pathJoin(prefix, name)].map(JSON.stringify).join(",")
+	})
+	return csv.join("\n")
+}
+
 export async function build(project: Project) {
 	const { notes, tree, refs } = project.analyse()
 	project.renderPage("index.html", indexPage(project))
@@ -288,4 +300,7 @@ export async function build(project: Project) {
 		const html = notes[name].render()
 		project.renderPage(`${name}.html`, html)
 	}
+
+	const csv = exportPermalinksCSV(Object.keys(notes))
+	Deno.writeTextFile(`src/typst-template/permalinks.csv`, csv)
 }

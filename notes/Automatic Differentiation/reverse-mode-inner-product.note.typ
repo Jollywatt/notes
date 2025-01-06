@@ -4,19 +4,56 @@
 #let ip(left, right) = $lr(angle.l left, right angle.r)$
 #set math.equation(numbering: "(1)")
 
-= On the choice of inner product for reverse mode autodiff
+= On the choice of inner product for reverse-mode autodiff
 
-Forward mode @forward-reverse-mode-autodiff[automatic differentiation] transforms a program which computes a function $f : X -> Y$ into a program that returns the primal value $y = f(x)$ along with the directional derivative $DD f[x](dot(x))$ in some given direction $dot(x)$.
+
+Forward mode @forward-reverse-mode-autodiff[automatic differentiation] transforms a program which computes a function $f : X -> Y$ into a program that returns the primal value $y = f(x)$ along with the directional derivative $dot(y) = DD f[x](dot(x))$ in some given direction $dot(x)$.
 
 In reverse mode, we obtain a program which computes the primal value along with the _adjoint_ of the directional derivative operator $DD f[x]^* : Y -> X$.
-This adjoint is only defined with respect to a _choice of inner products_ on the vector spaces $X$ and $Y$.
+We _then_ evaluate this operator to obtain a final derivative $overline(x) = DD f[x]^* (overline(y))$ given some $overline(y)$.
+
+In #link("https://compintell.github.io/Mooncake.jl/stable/")[Mooncake.jl], the operator $DD f[x]^*$ is the `pb!!` closure in ```julia out, pb!! = rule(fx_fwds...)``` and $overline(x)$ is the second return value of ```julia value_and_pullback!!(rule, ȳ, f, x...)```.
+
+We tend to treat $dot(y)$ (returned by forward-mode) and $overline(x)$ (returned by reverse-mode) as the same.
+We should be careful, because they do not strictly belong to the same space.
+Instead, there is one more step we should do to recover $dot(y)$ from $overline(x)$ after reverse-mode.
+We tend to skip this step because, with the standard adjoint operator, $dot(y)$ and $overline(x)$ both look the same.
+
+
+== Adjoints and inner products
+
+*Reminder.* If $V$ is a vector space, then its _dual space_ $V^*$ is the vector space of linear operators from $V$ to the underlying field.
+
+The adjoint $DD f[x]^*$ is dependent on a #highlight[choice of inner products] on the vector spaces $X$ and $Y$.
 This choice is usually implicit, even though from the defining relation of the adjoint
 $
 ip(DD f[x]^*(overline(y)), dot(x))_X = ip(overline(y), DD f[x](dot(x)))_Y
 $ <adjoint>
 it is clear that different choices of inner product result in different operators $DD f[x]^*$.
 
-== Does the choice of inner product matter?
+== Note on notation
+
+We inherit notation from @mooncake-intro[Mooncake.jl]. 
+This includes "dot and bar" notation (prevalent in the autodiff community):
+- The "dot" tangent vector $dot(x)$ behaves like $dif x$, so that $dot(y) = (partial y)/(partial x) dot(x)$;
+- The "bar" tangent vector $overline(x)$ behaves like $partial/(partial x)$, so that $overline(y) = (partial x)/(partial y) overline(x)$.
+
+If $dot(x)$ is represented as a column vector, then $overline(x)$ is naturally represented as a row vector.
+
+The tangent and cotangent spaces are isomorphic, but a choice of isomorphism is a choice of adjoint is a choice of inner product
+(For example, the transpose $x |-> x^T$ defines the Euclidean inner product $ip(x, y) = x^T y$. Another choice is the map $(t, x, y, z) |-> (-t, x, y, z)^T$ and the Lorentian inner product.)
+
+== #highlight[Does the choice of inner product matter?]
+
+Suppose $y = f(x)$.
+The reverse-pass yeilds $overline(x) = DD f[x]^*(overline(y))$ for an initial $overline(y)$.
+We are interested in the directional derivatives $dot(y) = DD f[x]^*(dot(x))$ for each linearly independent $dot(x)$.
+Using @adjoint, we can obtain $dot(y)$ as
+$
+ip(overline(x), dot(x)) = ip(overline(y), text(#green.darken(20%), dot(y)))
+$
+
+At first glance it is not obvious that reverse-mode differentiation is independent of the inner products involved.
 
 We care about the actual derivative $DD f[x]$, not the adjoint $DD f[x]^*$.
 What we really do in reverse mode is use @adjoint to recover the derivative $DD f[x](dot(x))$ in terms of $DD f[x]^*(overline(y))$ by fixing various values of $overline(y)$ and $dot(x)$.
