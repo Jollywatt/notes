@@ -209,7 +209,7 @@ This method is memory-heavy because we allocate an entire vector of partial deri
 md"""
 ### Vectorized reverse-mode
 
-This is almost identical to performing vectorized forward-mode, except that we propogate closures instead of vectors.
+This is almost identical to performing vectorized forward-mode, except that we propagate closures instead of vectors.
 
 The forward pass builds up a chain of callbacks, and to perform the reverse pass, we call the final callback.
 """
