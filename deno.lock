@@ -939,6 +939,22 @@
       ]
     }
   },
+  "redirects": {
+    "https://github.com/Jollywatt/zettelbuilder/raw/refs/heads/main/src/main.ts": "https://raw.githubusercontent.com/Jollywatt/zettelbuilder/refs/heads/main/src/main.ts",
+    "https://raw.github.com/Jollywatt/zettelbuilder/main/src/main.ts": "https://raw.githubusercontent.com/Jollywatt/zettelbuilder/main/src/main.ts"
+  },
+  "remote": {
+    "https://raw.githubusercontent.com/Jollywatt/zettelbuilder/main/src/analyse.tsx": "10618f5544678b8eeb8c2a14cd0dfb8316737e03616d436237bf09138c1a94d9",
+    "https://raw.githubusercontent.com/Jollywatt/zettelbuilder/main/src/main.ts": "1c9c5d6c51be42405cf3a5e9e485a7f014dcfa2c38b776453aeaa52a4fc65dcb",
+    "https://raw.githubusercontent.com/Jollywatt/zettelbuilder/main/src/server.ts": "e159e5bf76c078caace95f1e267e91645b38fc9049dae46cf2d9ffd335472059",
+    "https://raw.githubusercontent.com/Jollywatt/zettelbuilder/main/src/themes/minimal.tsx": "39bf02e0c63da1684b9d8f2b6dad82bf9d6322e807a76a6c0f1d9d9407bd1beb",
+    "https://raw.githubusercontent.com/Jollywatt/zettelbuilder/main/src/themes/zetteldocs.tsx": "99628c7821a2ced9735ff8c576c2069e8e18f89cd72c5107a7a45273178898ed",
+    "https://raw.githubusercontent.com/Jollywatt/zettelbuilder/refs/heads/main/src/analyse.tsx": "9400f292954d6c461a9dd7267c4f22188272d14d466d956a9acfe73b6fd1f8f0",
+    "https://raw.githubusercontent.com/Jollywatt/zettelbuilder/refs/heads/main/src/main.ts": "1c9c5d6c51be42405cf3a5e9e485a7f014dcfa2c38b776453aeaa52a4fc65dcb",
+    "https://raw.githubusercontent.com/Jollywatt/zettelbuilder/refs/heads/main/src/server.ts": "b4ab4b69b2f824bb84b9750f6614cbcef42443e2b481150786582e206c427338",
+    "https://raw.githubusercontent.com/Jollywatt/zettelbuilder/refs/heads/main/src/themes/minimal.tsx": "ff3ff76aa42c647fab1af3e9851285d952a3e6b1a85c7f4604c84d9bbf7279bf",
+    "https://raw.githubusercontent.com/Jollywatt/zettelbuilder/refs/heads/main/src/themes/zetteldocs.tsx": "99628c7821a2ced9735ff8c576c2069e8e18f89cd72c5107a7a45273178898ed"
+  },
   "workspace": {
     "dependencies": [
       "jsr:@deno/gfm@0.10",
