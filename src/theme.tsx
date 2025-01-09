@@ -1,6 +1,6 @@
 import { Note, NoteFolder, Project } from "zettelbuilder"
 import { CSS, render as renderMarkdown } from "@deno/gfm"
-import { render } from "preact-render-to-string"
+import { render } from "@preact/render"
 import { copySync } from "@std/fs"
 import { join as pathJoin } from "@std/path"
 
@@ -66,7 +66,7 @@ const indexPage = (project: Project) => (
 		<img id="background" src={pathJoin(root, "assets/background.png")} />
 		<div id="toc" className="pad">
 			<h1>
-				<a href="/">Joseph</a>’s notes V. II
+				<a href="/">Joseph</a>’s notes V.II
 			</h1>
 			<p>
 				Welcome to my Zettelkasten garden of notes. Here is where I put scraps
