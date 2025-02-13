@@ -1,0 +1,114 @@
+---
+title: "Yule–Simpson paradox"
+format: 
+  html: 
+    self-contained: true
+    #html-math-method: katex
+---
+
+Suppose we have some counts from a binary trial:
+
+```{r, include=FALSE}
+counts = rbind(
+  treated = c(event = 273, nonevent = 77),
+  control = c(event = 289, nonevent = 61)
+)
+```
+
+
+```{r}
+counts
+```
+
+
+According to each of the following metrics, the risk of the event occurring is reduced for the treatment group relative to the control group.
+
+### Risk difference
+
+```{r, include=FALSE}
+riskdiff <- function(counts) {
+  treated = counts['treated','event']/sum(counts['treated',])
+  control = counts['control','event']/sum(counts['control',])
+  treated - control
+}
+```
+
+$$
+\text{risk difference}
+  = {\frac{\text{event} \cap \text{treated}}{\text{treated}}}
+  - {\frac{\text{event} \cap \text{control}}{\text{control}}}
+$$
+
+```{r}
+riskdiff(counts)
+```
+
+### Risk ratio
+
+$$
+\text{risk ratio}
+  = {\frac{\text{event} \cap \text{treated}}{\text{treated}}}
+  \bigg/ {\frac{\text{event} \cap \text{control}}{\text{control}}}
+$$
+
+```{r, include=FALSE}
+riskratio <- function(counts) {
+  treated = counts['treated','event']/sum(counts['treated',])
+  control = counts['control','event']/sum(counts['control',])
+  treated/control
+}
+```
+
+```{r}
+riskratio(counts)
+```
+
+### Odds ratio
+
+$$
+\text{odds ratio}
+  = {\frac{\text{treated} \cap \text{event}}{\text{treated} \cap \text{nonevent}}}
+  \bigg/ {\frac{\text{control} \cap \text{event}}{\text{control} \cap \text{nonevent}}}
+$$
+
+```{r, include=FALSE}
+oddsratio <- function(counts) {
+  treated = counts['treated','event']/counts['treated','nonevent']
+  control = counts['control','event']/counts['control','nonevent']
+  treated/control
+}
+```
+
+
+```{r}
+oddsratio(counts)
+```
+
+## Stratification can be misleading
+
+Let's now stratify the population by some variable with values $A$ and $B$:
+
+```{r, include=FALSE}
+strata <- list(
+  A = rbind(
+    treated = c(event = 192, nonevent = 71),
+    control = c(event = 55, nonevent = 25)
+  ),
+  B = rbind(
+    treated = c(event = 81, nonevent = 6),
+    control = c(event = 234, nonevent = 36)
+  )
+)
+```
+
+```{r}
+strata
+```
+
+Notice that these stratafied counts partition the original counts...
+
+```{r}
+strata$A + strata$B
+```
+
+...so you would expect to draw the same overall conclusions about the effectiveness of the treatment, right?

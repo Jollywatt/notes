@@ -1,0 +1,80 @@
+/*
+This file is for CSS rules for widgets and local elements that
+are safe to be injected into existing HTML pages. I.e., there
+should be no global rules that might interfere with arbitrary
+pages (except for unavoidable CSS class name clashes).
+*/
+
+.notelink {
+	font-family: monospace;
+	font-size: initial;
+}
+
+.zettel-side-menu {
+	position: fixed;
+	z-index: 100000;
+	background: light-dark(#eeed, #111d);
+	top: 50%;
+	border-radius: 5px;
+	--tabsize: 35px;
+	--r: 10px;
+	transition: 0.18s cubic-bezier(0, 0.03, 0.22, 0.93);
+}
+.zettel-side-menu.left {
+	left: 0;
+	border-radius: 0 var(--r) var(--r) 0;
+	transform: translate(calc(var(--tabsize) - 100%), -50%);
+}
+.zettel-side-menu.right {
+	right: 0;
+	border-radius: var(--r) 0 0 var(--r);
+	transform: translate(calc(100% - var(--tabsize)), -50%);
+}
+.zettel-side-menu:hover {
+	transform: translate(0pt, -50%);
+	box-shadow: 0 3px 5pt #0005;
+}
+.zettel-side-menu > div {
+	position: relative;
+	padding: 15px;
+}
+.zettel-side-menu.left > div {
+	padding-right: calc(var(--tabsize) + 2px);
+}
+.zettel-side-menu.right > div {
+	padding-left: calc(var(--tabsize) + 2px);
+}
+
+.zettel-side-menu .tab {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	--icon-dist: 15px;
+}
+.zettel-side-menu .tab.right {
+	right: var(--icon-dist);
+}
+.zettel-side-menu .tab.left {
+	left: var(--icon-dist);
+}
+
+.zettel-side-menu li {
+	list-style: none;
+	line-height: 1.6;
+}
+
+.zettel-floating-header {
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: var(--header-size);
+	padding: 10px;
+	border-radius: 0 0 5pt 0;
+	background: light-dark(white, #111d);
+	box-shadow: 0 0 5pt #0005;
+	z-index: 10000;
+}
+
+#quarto-content {
+	margin-top: 50px;
+}

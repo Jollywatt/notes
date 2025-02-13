@@ -1,0 +1,193 @@
+@import url("https://fonts.cdnfonts.com/css/linux-libertine-o");
+
+:root:has(body.light-dark) {
+	color-scheme: light dark;
+}
+
+html {
+	--header-size: 30px;
+	--pdf-background: #808080;
+	background: var(--pdf-background);
+	font-family: "Linux Libertine O", sans-serif;
+}
+
+html:has(object) {
+	background: var(--pdf-background);
+}
+
+html:has(.scroll) {
+	overflow: hidden;
+}
+
+html:has(#toc) {
+	background: light-dark(wheat, #14141d);
+	color: light-dark(#14141d, wheat);
+}
+
+html:has(#toc) a:any-link {
+	color: #978ebf;
+}
+html:has(#toc) a:visited {
+	color: #715b9a;
+}
+html:has(#toc) a:active {
+	color: light-dark(black, white);
+}
+html:has(#toc) a:hover {
+	color: light-dark(black, white);
+}
+
+h1 a {
+	color: inherit !important;
+}
+
+#background {
+	position: fixed;
+	top: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	width: calc(300px + 70vw);
+	opacity: 0.15;
+	z-index: -1000;
+	mask-image: linear-gradient(270deg, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
+}
+
+@media (prefers-color-scheme: light) {
+	#background {
+		mix-blend-mode: multiply;
+	}
+}
+@media (prefers-color-scheme: dark) {
+	#background {
+		mix-blend-mode: screen;
+		filter: invert();
+	}
+}
+
+#background ~ h1 {
+	padding-top: 80px;
+}
+
+pre {
+	tab-size: 4;
+}
+
+body {
+	padding: 0;
+	margin: 0;
+}
+
+#header {
+	height: var(--header-size);
+	padding-left: 12px;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+#content {
+	max-width: 800px;
+	height: calc(100vh - var(--header-size));
+	margin: auto;
+}
+
+#content:has(object) {
+	line-height: 0; /* fixes weird vertical space */
+}
+
+#toc-page {
+	max-width: 800px;
+	margin: auto;
+	padding-bottom: 60px;
+}
+
+#toc.show li {
+	display: list-item;
+}
+
+#toc:not(.show) li:not(.show) {
+	display: none;
+}
+#toc li:has(.show) {
+	display: list-item !important;
+}
+
+#toc .show li {
+	display: list-item !important;
+}
+
+#search-field {
+	background: #fff1;
+	width: 100%;
+	padding: 0.5em;
+	margin: 10px -0.5em;
+	border-radius: 0.5em;
+	font-size: 1em;
+	font-family: inherit;
+	border: 1px solid light-dark(#14141d66, rgba(245, 222, 179, 0.2));
+	color: light-dark(#14141d, wheat);
+}
+
+#toc.show #search-clear {
+	display: none;
+}
+
+.pad {
+	padding: 0pt 25pt;
+}
+
+object[type="application/pdf"] {
+	width: 100%;
+	height: 100%;
+}
+
+.noscroll {
+	overflow: hidden;
+}
+
+.scroll {
+	overflow: scroll;
+	height: 100%;
+}
+
+#toc > ul {
+	list-style-type: "∙ ";
+	padding-inline-start: 0pt;
+}
+
+ul {
+	list-style-type: "∙ ";
+	padding-inline-start: 20pt;
+}
+
+#content > ul {
+	padding-inline-start: 0;
+}
+
+li:has(ul) {
+	margin: 5pt 0;
+}
+
+#toc li[data-folder] > span {
+	cursor: pointer;
+}
+
+iframe {
+	border: none;
+	display: block;
+	height: calc(100vh - 30px);
+	width: 100vw;
+}
+
+#wide-header {
+	height: 20px;
+	padding: 5px;
+	border-radius: 0 0 5pt 0;
+	color: white !important;
+	background: #2a2a2a;
+	box-shadow: 0 0 5pt #0005;
+	z-index: 10000;
+}
+#wide-header a {
+	color: white;
+}
